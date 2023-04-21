@@ -1,6 +1,5 @@
 # Mac
 *.DS_Store
-transcripts.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
