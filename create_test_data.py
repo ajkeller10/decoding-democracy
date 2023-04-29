@@ -20,17 +20,30 @@ def transcript_pickle_to_pd():
 
 def generate_segment(t : pd, doc_count_limit: int = 10, sentence_min: int = 20) -> tuple: 
     '''
-    Generate testing transcript from transcript data. Output resembles a transcript, but incorporates segments from 1:doc_count_limit documents 
+    Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
+
+    Output is representative of transcripts in the following ways: 
+    - Sample of transcripts is filtered to documents of sufficient length (>=doc_count_limit*sentence_min)
+        - For this reason, doc_count_limit<= 10 and sentence_min<= 50 are recommended
+    - Documents used in output are randomly selected from remaining sample
+    - Output length is drawn from sample distribution of remaining document lengths 
+    - Output starts with text from the start of a document, and ends with text from the end of a document
+        - If document count of 1 is selected, the output will be identical to a randomly selected text
+        - If document count above 2 is selected, all other documents have sentences sampled from a random starting point within the document. Range of (0 : length - sentences_to_use)
+    - Number of sentences selected from a document is independent of length of the document
+        - Except if sentences selected surpasses the end of the document, in which case number of sentences ends with end of document
+        - This approach lets document selection and starting point selection remain random
+        - This exception occurs less frequently with larger document counts
+
     
     Args:
         t: transcripts
-        doc_count_limit: maximum number of docs to pull from
-        sentence_min: minimum number of sentences per text
+        doc_count_limit: maximum number of documents to pull from. Actual number in range of 1:doc_count_limit
+        sentence_min: minimum number of sentences per document selected
     
     Returns:
         segment (list): List of sentences
-        labels (list): Number document sentence pulled from 
-        
+        labels (list): Index of which document each sentence was pulled from. Range of 1:doc_count_limit         
     '''
 
     #filter text for sufficiently long texts 
@@ -58,7 +71,7 @@ def generate_segment(t : pd, doc_count_limit: int = 10, sentence_min: int = 20) 
         text['sentences_to_use']= text['sentences_to_use'].astype('int') + sentence_min
 
         #reallocate sentences from shorter documents to last documents if necessary
-        #NOTE: this lets us incorporate smaller documents, rather than oversampling from larger documents
+        #note: this lets us incorporate smaller documents, rather than oversampling from larger documents
         text['reallocate']=text['length']-text['sentences_to_use']
         text.loc[text['reallocate']>0,'reallocate'] = 0
         text['sentences_to_use']=text['sentences_to_use']+text['reallocate']
