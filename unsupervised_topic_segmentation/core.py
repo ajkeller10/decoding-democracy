@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# import baselines as topic_segmentation_baselines  # commented due to environment
+from . import baselines as topic_segmentation_baselines
 import numpy as np
 import pandas as pd
 import torch
@@ -242,12 +242,10 @@ def topic_segmentation(
             topic_segmentation_config,
         )
     elif topic_segmentation_algorithm == TopicSegmentationAlgorithm.RANDOM:
-        raise NotImplementedError("Random topic segmentation is not implemented")  # due to environment
         return topic_segmentation_baselines.topic_segmentation_random(
             df, meeting_id_col_name, start_col_name, end_col_name, caption_col_name
         )
     elif topic_segmentation_algorithm == TopicSegmentationAlgorithm.EVEN:
-        raise NotImplementedError("Even topic segmentation is not implemented")  # due to environment
         return topic_segmentation_baselines.topic_segmentation_even(
             df, meeting_id_col_name, start_col_name, end_col_name, caption_col_name
         )
