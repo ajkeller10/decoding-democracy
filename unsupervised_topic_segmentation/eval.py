@@ -204,6 +204,7 @@ def eval_topic_segmentation(
     elif dataset_name == TopicSegmentationDatasets.ICSI:
         input_df, label_df = icsi_dataset()
     elif dataset_name == TopicSegmentationDatasets.TEST:
+        raise NotImplementedError("Test dataset not implemented yet.")
         input_df, label_df = test_video_dataset()
     else:
         raise NotImplementedError("Unknown dataset_name given.")

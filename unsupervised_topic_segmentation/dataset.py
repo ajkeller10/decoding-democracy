@@ -48,6 +48,7 @@ def icsi_dataset():
 
     label_df
     """
+    raise NotImplementedError("Need to download dataset and set up dataset.py.")
     return input_df, label_df
 
 
@@ -71,6 +72,7 @@ def ami_dataset():
             FROM {labels}
             WHERE ds = '2021-01-10'
     """
+    raise NotImplementedError("Need to download dataset and set up dataset.py.")
     return input_df, label_df
 
 
