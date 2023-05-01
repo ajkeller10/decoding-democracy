@@ -4,10 +4,12 @@ import numpy as np
 import pandas as pd
 import torch
 
-from transformers import RobertaConfig, RobertaModel
+from transformers import RobertaConfig, RobertaModel, AutoTokenizer, AutoModel
 # pretrained roberta model
 configuration = RobertaConfig()
 roberta_model = RobertaModel(configuration)
+tokenizer = AutoTokenizer.from_pretrained("roberta-base")
+roberta_model_new = AutoModel.from_pretrained("roberta-base")
 
 from .types import (
     TopicSegmentationAlgorithm,
@@ -93,21 +95,31 @@ def block_comparison_score(timeseries, k):
     return res
 
 
-def get_features_from_sentence(batch_sentences, layer=-2):
+def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
     """
     extracts the BERT semantic representation
     from a sentence, using an averaged value of
     the `layer`-th layer
 
-    returns a 1-dimensional tensor of size 758
+    returns a 1-dimensional tensor of size 758 [old] or 768 [new]
     """
     batch_features = []
-    for sentence in batch_sentences:
-        tokens = roberta_model.encode(sentence)
-        all_layers = roberta_model.extract_features(tokens, return_all_hiddens=True)
-        pooling = torch.nn.AvgPool2d((len(tokens), 1))
-        sentence_features = pooling(all_layers[layer])
-        batch_features.append(sentence_features[0])
+    if old_version:  # original code - old version of transformers, unclear which one
+        for sentence in batch_sentences:
+            tokens = roberta_model.encode(sentence)
+            all_layers = roberta_model.extract_features(tokens, return_all_hiddens=True)
+            pooling = torch.nn.AvgPool2d((len(tokens), 1))
+            sentence_features = pooling(all_layers[layer])
+            batch_features.append(sentence_features[0])            
+    else:  # rewritten to (hopefully) do the same thing
+        for sentence in batch_sentences:
+            tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
+            input_ids, attention_mask = tokens["input_ids"], tokens["attention_mask"]
+            all_layers = roberta_model_new(
+                input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states
+            pooling = torch.nn.AvgPool2d((input_ids.size(1), 1))
+            sentence_features = pooling(all_layers[layer])
+            batch_features.append(sentence_features[0])            
     return batch_features
 
 
