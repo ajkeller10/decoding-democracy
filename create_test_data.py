@@ -18,7 +18,7 @@ def transcript_pickle_to_pd():
 
     return t 
 
-def generate_segment(t : pd, doc_count_limit: int = 10, sentence_min: int = 20) -> tuple: 
+def generate_segment(t : pd.DataFrame, doc_count_limit: int = 10, sentence_min: int = 20) -> tuple: 
     '''
     Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
 
@@ -73,7 +73,7 @@ def generate_segment(t : pd, doc_count_limit: int = 10, sentence_min: int = 20) 
         #reallocate sentences from shorter documents to last documents if necessary
         #note: this lets us incorporate smaller documents, rather than oversampling from larger documents
         text['reallocate']=text['length']-text['sentences_to_use']
-        text.loc[text['reallocate']>0,'reallocate'] = 0
+        text.loc[text['reallocate']>0,'reallocate'] = 0  ### DK: I think this always sets reallocate to 0 so below steps have no effect?
         text['sentences_to_use']=text['sentences_to_use']+text['reallocate']
         text['reallocate_cum']=text['reallocate'].cumsum()
 
@@ -94,9 +94,9 @@ def generate_segment(t : pd, doc_count_limit: int = 10, sentence_min: int = 20) 
     text['labels']=text.apply(lambda x: [x['index']] * x['sentences_to_use'],axis=1)
     
     results = list(itertools.chain.from_iterable(text['results']))
-    labels = list(itertools.chain.from_iterable(text['results']))
+    labels = list(itertools.chain.from_iterable(text['labels']))
 
-    return (results,labels,doc_count)
+    return results,labels,doc_count
 
 def try_create_test_data():
     t=transcript_pickle_to_pd()
