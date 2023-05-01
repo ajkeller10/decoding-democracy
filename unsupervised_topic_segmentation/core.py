@@ -26,7 +26,7 @@ def PrintMessage(msg, x):
 def depth_score(timeseries):
     """
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
-    given token-sequence gap and is based on the distance from the peaks on both sides of the valleyto that valley.
+    given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley.
 
     returns depth_scores
     """
@@ -85,7 +85,7 @@ def block_comparison_score(timeseries, k):
     cfr. docstring of block_comparison_score
     """
     res = []
-    for i in range(k, len(timeseries) - k):
+    for i in range(k, len(timeseries) - k):  #  need window cushion on each end
         first_window_features = compute_window(timeseries, i - k, i + 1)
         second_window_features = compute_window(timeseries, i + 1, i + k + 2)
         res.append(
@@ -158,13 +158,13 @@ def depth_score_to_topic_change_indexes(
         depth_score_timeseries
     )
 
-    print("DEPTH_SCORE_TIMESERIES:")
-    print(list(depth_score_timeseries))
+    #print("DEPTH_SCORE_TIMESERIES:")  # not sure why we would want to print this...
+    #print(list(depth_score_timeseries))
 
     if depth_score_timeseries == []:
         return []
 
-    local_maxima_indices, local_maxima = get_local_maxima(depth_score_timeseries)
+    local_maxima_indices, local_maxima = get_local_maxima(depth_score_timeseries)  # simple: higher than neighbors
 
     if local_maxima == []:
         return []
@@ -188,7 +188,7 @@ def depth_score_to_topic_change_indexes(
         # after pruning, sort again based on indices for chronological ordering
         local_maxima_indices, _ = arsort2(local_maxima_indices, local_maxima)
 
-    else:  # this is the vanilla TextTiling used for Pk optimization
+    else:  # this is the vanilla TextTiling used for Pk optimization - just take local maxima above threshold
         filtered_local_maxima_indices = []
         filtered_local_maxima = []
 
@@ -200,8 +200,8 @@ def depth_score_to_topic_change_indexes(
         local_maxima = filtered_local_maxima
         local_maxima_indices = filtered_local_maxima_indices
 
-    print("LOCAL_MAXIMA_INDICES:")
-    print(list(local_maxima_indices))
+    #print("LOCAL_MAXIMA_INDICES:")
+    #print(list(local_maxima_indices))
 
     return local_maxima_indices
 
@@ -279,33 +279,38 @@ def topic_segmentation_bert(
     batches_features = []
     for batch_sentences in split_list(
         df[caption_col_name], PARALLEL_INFERENCE_INSTANCES
-    ):
-        batches_features.append(get_features_from_sentence(batch_sentences))
-    features = flatten_features(batches_features)
+    ): # splits into sequential batches such that total number of batches equals INSTANCES value
+        batches_features.append(get_features_from_sentence(batch_sentences)) # list of tensors of size (1,768), one for each sentence
+    features = flatten_features(batches_features)   # changes back to list of length 768 tensors, one for each sentence in dataset
 
     # meeting_id -> list of topic change start times
     segments = {}
     task_idx = 0
-    print("meeting_id -> task_idx")
+    #print("meeting_id -> task_idx")
     for meeting_id in set(df[meeting_id_col_name]):
-        print("%s -> %d" % (meeting_id, task_idx))
+        #print("%s -> %d" % (meeting_id, task_idx))
         task_idx += 1
 
         meeting_data = df[df[meeting_id_col_name] == meeting_id]
         caption_indexes = list(meeting_data.index)
 
-        timeseries = get_timeseries(caption_indexes, features)
+        timeseries = get_timeseries(caption_indexes, features)  # this is just supposed to reset order according to index
         block_comparison_score_timeseries = block_comparison_score(
             timeseries, k=textiling_hyperparameters.SENTENCE_COMPARISON_WINDOW
-        )
+        )  # this is list of length len(timeseries) - 2*SENTENCE_COMPARISON_WINDOW
+        # each element is the similarity score of window before and after
 
         block_comparison_score_timeseries = smooth(
             block_comparison_score_timeseries,
             n=textiling_hyperparameters.SMOOTHING_PASSES,
             s=textiling_hyperparameters.SMOOTHING_WINDOW,
-        )
+        )  # does some smoothing on list described above, small (<1%) effect in some tests
 
         depth_score_timeseries = depth_score(block_comparison_score_timeseries)
+        # produces list of length of comparison scores minus 2
+        # "The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
+        # given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley."
+        # what's weird is this seems like different approach than what was in paper?? is it somehow equivalent?
 
         meeting_start_time = meeting_data[start_col_name].iloc[0]
         meeting_end_time = meeting_data[end_col_name].iloc[-1]
