@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 import logging
 from bisect import bisect
-from typing import Dict
+from typing import Dict, Optional
+import pandas as pd
 
 from .core import topic_segmentation
 from .dataset import (
     ami_dataset,
     icsi_dataset,
 )
-from .types import (
-    TopicSegmentationAlgorithm,
-    TopicSegmentationDatasets,
-    TopicSegmentationConfig,
-)
+from .types import TopicSegmentationAlgorithm, TopicSegmentationDatasets
 from nltk.metrics.segmentation import pk, windowdiff
 
 
+MEETING_ID_COL_NAME = "meeting_id"
+START_COL_NAME = "start_time"
+END_COL_NAME = "end_time"
+CAPTION_COL_NAME = "caption"
+LABEL_COL_NAME = "label"
+
+
 def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=""):
-    print(prediction_segmentations)
-    print(binary_labels)
+    #print(prediction_segmentations)
+    #print(binary_labels)
     _pk, _windiff = [], []
     for meeting_id, reference_segmentation in binary_labels.items():
 
@@ -187,68 +191,84 @@ def binary_labels_top_level(
     return labels_top_level
 
 
-MEETING_ID_COL_NAME = "meeting_id"
-START_COL_NAME = "st"
-EN_COL_NAME = "en"
-CAPTION_COL_NAME = "caption"
+def recode_labels(input_df,meeting_id_col_name,label_col_name):
+    """
+    Dictionary of meeting_id: reference_segmentation where latter is
+    0/1 binary for transition sentences - for example, recode [1,1,2,2,2,3] to [0,0,1,0,0,0,1]
+    """
+    output = dict()
+    for meeting_id in input_df[meeting_id_col_name].unique():
+        labels = input_df[input_df[meeting_id_col_name]==meeting_id][label_col_name].to_list()
+        recoded_labels = [0] * len(labels)
+        current_label = labels[0]
+        for i in range(len(labels)):
+            if labels[i] != current_label:
+                current_label = labels[i]
+                recoded_labels[i] = 1
+        output[meeting_id] = recoded_labels
+    return output
+
+
+def merge_metrics(*metrics):
+    res = {}
+    for m in metrics:
+        for k, v in m.items():
+            res[k] = v
+    return res
 
 
 def eval_topic_segmentation(
-    dataset_name: TopicSegmentationDatasets,
     topic_segmentation_algorithm: TopicSegmentationAlgorithm,
-    topic_segmentation_config: TopicSegmentationConfig,
+    dataset_name: Optional[TopicSegmentationDatasets] = None,
+    input_df: Optional[pd.DataFrame] = None,
+    col_names: Optional[tuple] = None
 ) -> Dict[str, float]:
-
-    if dataset_name == TopicSegmentationDatasets.AMI:
-        input_df, label_df = ami_dataset()
-    elif dataset_name == TopicSegmentationDatasets.ICSI:
-        input_df, label_df = icsi_dataset()
-    elif dataset_name == TopicSegmentationDatasets.TEST:
-        raise NotImplementedError("Test dataset not implemented yet.")
-        input_df, label_df = test_video_dataset()
-    else:
-        raise NotImplementedError("Unknown dataset_name given.")
+    
+    if dataset_name is not None:
+        if dataset_name == TopicSegmentationDatasets.AMI:
+            input_df, label_df = ami_dataset()
+        elif dataset_name == TopicSegmentationDatasets.ICSI:
+            input_df, label_df = icsi_dataset()
+        elif dataset_name == TopicSegmentationDatasets.TEST:
+            raise NotImplementedError("Test dataset not implemented yet.")
+            input_df, label_df = test_video_dataset()  # unclear what this is referring to
+        else:
+            raise ValueError("Unknown dataset name.")
+    
+    if col_names is None:
+        col_names = (MEETING_ID_COL_NAME,START_COL_NAME,END_COL_NAME,CAPTION_COL_NAME,LABEL_COL_NAME)
+    meeting_id_col_name, start_col_name, end_col_name, caption_col_name, label_col_name = col_names
 
     prediction_segmentations = topic_segmentation(
         topic_segmentation_algorithm,
         input_df,
-        MEETING_ID_COL_NAME,
-        START_COL_NAME,
-        EN_COL_NAME,
-        CAPTION_COL_NAME,
-        topic_segmentation_config,
+        meeting_id_col_name,
+        start_col_name,
+        end_col_name,
+        caption_col_name,
     )
 
-    flattened = binary_labels_flattened(
-        input_df,
-        label_df,
-        MEETING_ID_COL_NAME,
-        START_COL_NAME,
-        EN_COL_NAME,
-        CAPTION_COL_NAME,
-    )
-
-    top_level = binary_labels_top_level(
-        input_df,
-        label_df,
-        MEETING_ID_COL_NAME,
-        START_COL_NAME,
-        EN_COL_NAME,
-        CAPTION_COL_NAME,
-    )
-
-    flattened_metrics = compute_metrics(
-        prediction_segmentations, flattened, metric_name_suffix="flattened"
-    )
-    top_level_metrics = compute_metrics(
-        prediction_segmentations, top_level, metric_name_suffix="top_level"
-    )
-
-    def merge_metrics(*metrics):
-        res = {}
-        for m in metrics:
-            for k, v in m.items():
-                res[k] = v
-        return res
-
-    return merge_metrics(flattened_metrics, top_level_metrics)
+    if dataset_name is not None:
+        flattened = binary_labels_flattened(
+            input_df,
+            label_df,
+            MEETING_ID_COL_NAME,
+            START_COL_NAME,
+            END_COL_NAME,
+            CAPTION_COL_NAME,)
+        top_level = binary_labels_top_level(
+            input_df,
+            label_df,
+            MEETING_ID_COL_NAME,
+            START_COL_NAME,
+            END_COL_NAME,
+            CAPTION_COL_NAME,)
+        flattened_metrics = compute_metrics(
+            prediction_segmentations, flattened, metric_name_suffix="flattened")
+        top_level_metrics = compute_metrics(
+            prediction_segmentations, top_level, metric_name_suffix="top_level")
+        return merge_metrics(flattened_metrics, top_level_metrics)
+    else:
+        return compute_metrics(
+            prediction_segmentations,
+            recode_labels(input_df,meeting_id_col_name,label_col_name))

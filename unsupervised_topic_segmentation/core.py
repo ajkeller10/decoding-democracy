@@ -11,11 +11,7 @@ roberta_model = RobertaModel(configuration)
 tokenizer = AutoTokenizer.from_pretrained("roberta-base")
 roberta_model_new = AutoModel.from_pretrained("roberta-base")
 
-from .types import (
-    TopicSegmentationAlgorithm,
-    TopicSegmentationConfig,
-    TextTilingHyperparameters,
-)
+from .types import TopicSegmentationAlgorithm, BERTSegmentation
 
 PARALLEL_INFERENCE_INSTANCES = 20
 
@@ -144,7 +140,7 @@ def get_local_maxima(array):
 def depth_score_to_topic_change_indexes(
     depth_score_timeseries,
     meeting_duration,
-    topic_segmentation_configs=TopicSegmentationConfig,
+    topic_segmentation_configs
 ):
     """
     capped add a max segment limit so there are not too many segments, used for UI improvements on the Workplace TeamWork product
@@ -235,7 +231,6 @@ def topic_segmentation(
     start_col_name: str,
     end_col_name: str,
     caption_col_name: str,
-    topic_segmentation_config: TopicSegmentationConfig,
 ):
     """
     Input:
@@ -244,22 +239,24 @@ def topic_segmentation(
         {meeting_id: [list of topic change indexes]}
     """
 
-    if topic_segmentation_algorithm == TopicSegmentationAlgorithm.BERT:
+    if topic_segmentation_algorithm.ID == "bert":
         return topic_segmentation_bert(
             df,
             meeting_id_col_name,
             start_col_name,
             end_col_name,
             caption_col_name,
-            topic_segmentation_config,
+            topic_segmentation_algorithm,
         )
-    elif topic_segmentation_algorithm == TopicSegmentationAlgorithm.RANDOM:
+    elif topic_segmentation_algorithm.ID == "random":
         return topic_segmentation_baselines.topic_segmentation_random(
-            df, meeting_id_col_name, start_col_name, end_col_name, caption_col_name
+            df, meeting_id_col_name, start_col_name, end_col_name,
+            caption_col_name,topic_segmentation_algorithm.RANDOM_THRESHOLD
         )
-    elif topic_segmentation_algorithm == TopicSegmentationAlgorithm.EVEN:
+    elif topic_segmentation_algorithm.ID == "even":
         return topic_segmentation_baselines.topic_segmentation_even(
-            df, meeting_id_col_name, start_col_name, end_col_name, caption_col_name
+            df, meeting_id_col_name, start_col_name, end_col_name,
+            caption_col_name, topic_segmentation_algorithm.k
         )
     else:
         raise NotImplementedError("Algorithm not implemented")
@@ -271,7 +268,7 @@ def topic_segmentation_bert(
     start_col_name: str,
     end_col_name: str,
     caption_col_name: str,
-    topic_segmentation_configs: TopicSegmentationConfig,
+    topic_segmentation_configs: BERTSegmentation,
 ):
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 

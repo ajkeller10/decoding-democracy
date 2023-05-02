@@ -8,11 +8,18 @@ class TopicSegmentationDatasets(Enum):
     ICSI = 1
     TEST = 2
 
-class TopicSegmentationAlgorithm(Enum):
-    RANDOM = 0
-    EVEN = 1
-    BERT = 2
-    SBERT = 3
+class TopicSegmentationAlgorithm():
+    ID = ''
+
+class RandomSegmentation(TopicSegmentationAlgorithm):
+    def __init__(self,random_threshold: float = 0.9):
+        self.RANDOM_THRESHOLD = random_threshold
+        self.ID = 'random'
+
+class EvenSegmentation(TopicSegmentationAlgorithm):
+    def __init__(self,k: int = 30):
+        self.k = k
+        self.ID = 'even'
 
 class TextTilingHyperparameters():
 
@@ -31,17 +38,22 @@ class TextTilingHyperparameters():
             "SMOOTHING_WINDOW=" + str(self.SMOOTHING_WINDOW) + ", " + \
             "TOPIC_CHANGE_THRESHOLD=" + str(self.TOPIC_CHANGE_THRESHOLD) + ")"
 
-class TopicSegmentationConfig():
-
+class BERTSegmentation(TopicSegmentationAlgorithm):
     def __init__(
         self, text_tiling: Optional[TextTilingHyperparameters] = None,
         max_segments_cap: bool = True, max_segments_cap__average_segment_length: int = 60):
         self.TEXT_TILING = text_tiling
         self.MAX_SEGMENTS_CAP = max_segments_cap
         self.MAX_SEGMENTS_CAP__AVERAGE_SEGMENT_LENGTH = max_segments_cap__average_segment_length
+        self.ID = 'bert'
 
     def __repr__(self):
-        return "TopicSegmentationConfig(" + \
+        return "BERTSegmentation(" + \
             "TEXT_TILING=" + str(self.TEXT_TILING) + ", " + \
             "MAX_SEGMENTS_CAP=" + str(self.MAX_SEGMENTS_CAP) + ", " + \
             "MAX_SEGMENTS_CAP__AVERAGE_SEGMENT_LENGTH=" + str(self.MAX_SEGMENTS_CAP__AVERAGE_SEGMENT_LENGTH) + ")"
+
+class SBERTSegmentation():
+    def __init__(self):
+        self.ID = 'sbert'
+        raise NotImplementedError()

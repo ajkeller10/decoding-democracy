@@ -18,7 +18,8 @@ def transcript_pickle_to_pd():
 
     return t 
 
-def generate_segment(t : pd.DataFrame, doc_count_limit: int = 10, sentence_min: int = 20) -> tuple: 
+def generate_segment(
+        t : pd.DataFrame = transcript_pickle_to_pd(), doc_count_limit: int = 10, sentence_min: int = 20) -> tuple: 
     '''
     Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
 
