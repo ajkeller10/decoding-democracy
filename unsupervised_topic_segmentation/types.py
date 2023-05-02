@@ -22,7 +22,6 @@ class EvenSegmentation(TopicSegmentationAlgorithm):
         self.ID = 'even'
 
 class TextTilingHyperparameters():
-
     def __init__(
             self,sentence_comparison_window: int = 15, smoothing_passes: int = 2,
             smoothing_window: int = 1, topic_change_threshold: float = 0.6):
