@@ -246,18 +246,13 @@ def topic_segmentation(
             start_col_name,
             end_col_name,
             caption_col_name,
-            topic_segmentation_algorithm,
-        )
+            topic_segmentation_algorithm)
     elif topic_segmentation_algorithm.ID == "random":
         return topic_segmentation_baselines.topic_segmentation_random(
-            df, meeting_id_col_name, start_col_name, end_col_name,
-            caption_col_name,topic_segmentation_algorithm.RANDOM_THRESHOLD
-        )
+            df, meeting_id_col_name, topic_segmentation_algorithm.RANDOM_THRESHOLD)
     elif topic_segmentation_algorithm.ID == "even":
         return topic_segmentation_baselines.topic_segmentation_even(
-            df, meeting_id_col_name, start_col_name, end_col_name,
-            caption_col_name, topic_segmentation_algorithm.k
-        )
+            df, meeting_id_col_name, topic_segmentation_algorithm.k)
     else:
         raise NotImplementedError("Algorithm not implemented")
 
