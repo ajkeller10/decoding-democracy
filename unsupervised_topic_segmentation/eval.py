@@ -232,8 +232,7 @@ def eval_topic_segmentation(
 
     prediction_segmentations = topic_segmentation(
         topic_segmentation_algorithm,input_df,meeting_id_col_name,
-        start_col_name,end_col_name,caption_col_name,
-    )
+        start_col_name,end_col_name,caption_col_name)
 
     if dataset_name is not None:
         flattened = binary_labels_flattened(

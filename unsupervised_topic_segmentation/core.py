@@ -1,23 +1,26 @@
-#!/usr/bin/env python3
-from . import baselines as topic_segmentation_baselines
 import numpy as np
 import pandas as pd
 import torch
-
+from . import baselines as topic_segmentation_baselines
+from .types import TopicSegmentationAlgorithm, BERTSegmentation
 from transformers import RobertaConfig, RobertaModel, AutoTokenizer, AutoModel
-# pretrained roberta model
+
+
+# pretrained Roberta model
 configuration = RobertaConfig()
 roberta_model = RobertaModel(configuration)
 tokenizer = AutoTokenizer.from_pretrained("roberta-base")
 roberta_model_new = AutoModel.from_pretrained("roberta-base")
 
-from .types import TopicSegmentationAlgorithm, BERTSegmentation
 
 PARALLEL_INFERENCE_INSTANCES = 20
+DISPLAY_SIMILARITIES = False
+
 
 def PrintMessage(msg, x):
     print(msg)
     print(x)
+
 
 def depth_score(timeseries):
     """
@@ -146,16 +149,12 @@ def depth_score_to_topic_change_indexes(
     capped add a max segment limit so there are not too many segments, used for UI improvements on the Workplace TeamWork product
     """
 
-    capped = topic_segmentation_configs.MAX_SEGMENTS_CAP
+    capped = topic_segmentation_configs.TEXT_TILING.MAX_SEGMENTS_CAP
     average_segment_length = (
-        topic_segmentation_configs.MAX_SEGMENTS_CAP__AVERAGE_SEGMENT_LENGTH
+        topic_segmentation_configs.TEXT_TILING.MAX_SEGMENTS_CAP__AVERAGE_SEGMENT_LENGTH
     )
     threshold = topic_segmentation_configs.TEXT_TILING.TOPIC_CHANGE_THRESHOLD * max(
-        depth_score_timeseries
-    )
-
-    #print("DEPTH_SCORE_TIMESERIES:")  # not sure why we would want to print this...
-    #print(list(depth_score_timeseries))
+        depth_score_timeseries)
 
     if depth_score_timeseries == []:
         return []
@@ -196,9 +195,6 @@ def depth_score_to_topic_change_indexes(
         local_maxima = filtered_local_maxima
         local_maxima_indices = filtered_local_maxima_indices
 
-    #print("LOCAL_MAXIMA_INDICES:")
-    #print(list(local_maxima_indices))
-
     return local_maxima_indices
 
 
@@ -220,8 +216,30 @@ def split_list(a, n):
     k, m = divmod(len(a), n)
     return (
         a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)]
-        for i in range(min(len(a), n))
-    )
+        for i in range(min(len(a), n)))
+
+
+def statistical_segmentation(similarities, stdevs):
+    indices = []
+    start = None
+    threshold = np.mean(similarities)-(np.std(similarities)*stdevs)
+    for i, value in enumerate(similarities):
+        if value < threshold:
+            if start is None:
+                start = i
+        else:
+            if start is not None:
+                min_index = start + similarities[start:i].index(min(similarities[start:i]))
+                indices.append(min_index)
+                start = None
+    return indices
+
+
+def fix_indices(segments, window_size, segmenting_method):
+    segments.sort()
+    if segmenting_method=="original_segmentation":
+        segments = [segment+2 for segment in segments]
+    return [segment+2*window_size for segment in segments]
 
 
 def topic_segmentation(
@@ -230,8 +248,7 @@ def topic_segmentation(
     meeting_id_col_name: str,
     start_col_name: str,
     end_col_name: str,
-    caption_col_name: str,
-):
+    caption_col_name: str):
     """
     Input:
         df: dataframe with meeting captions
@@ -263,8 +280,8 @@ def topic_segmentation_bert(
     start_col_name: str,
     end_col_name: str,
     caption_col_name: str,
-    topic_segmentation_configs: BERTSegmentation,
-):
+    topic_segmentation_configs: BERTSegmentation):
+
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 
     # parallel inference
@@ -275,47 +292,56 @@ def topic_segmentation_bert(
         batches_features.append(get_features_from_sentence(batch_sentences)) # list of tensors of size (1,768), one for each sentence
     features = flatten_features(batches_features)   # changes back to list of length 768 tensors, one for each sentence in dataset
 
-    # meeting_id -> list of topic change start times
     segments = {}
-    task_idx = 0
-    #print("meeting_id -> task_idx")
     for meeting_id in set(df[meeting_id_col_name]):
-        #print("%s -> %d" % (meeting_id, task_idx))
-        task_idx += 1
 
         meeting_data = df[df[meeting_id_col_name] == meeting_id]
         caption_indexes = list(meeting_data.index)
 
         timeseries = get_timeseries(caption_indexes, features)  # this is just supposed to reset order according to index
         block_comparison_score_timeseries = block_comparison_score(
-            timeseries, k=textiling_hyperparameters.SENTENCE_COMPARISON_WINDOW
+            timeseries, k=topic_segmentation_configs.SENTENCE_COMPARISON_WINDOW
         )  # this is list of length len(timeseries) - 2*SENTENCE_COMPARISON_WINDOW
         # each element is the similarity score of window before and after
 
-        block_comparison_score_timeseries = smooth(
-            block_comparison_score_timeseries,
-            n=textiling_hyperparameters.SMOOTHING_PASSES,
-            s=textiling_hyperparameters.SMOOTHING_WINDOW,
-        )  # does some smoothing on list described above, small (<1%) effect in some tests
+        if textiling_hyperparameters.ID=="original_segmentation":
 
-        depth_score_timeseries = depth_score(block_comparison_score_timeseries)
-        # produces list of length of comparison scores minus 2
-        # "The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
-        # given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley."
-        # what's weird is this seems like different approach than what was in paper?? is it somehow equivalent?
+            # does some smoothing on list described above, small (<1%) effect in some tests
+            block_comparison_score_timeseries = smooth(
+                block_comparison_score_timeseries,
+                n=textiling_hyperparameters.SMOOTHING_PASSES,
+                s=textiling_hyperparameters.SMOOTHING_WINDOW)
 
-        meeting_start_time = meeting_data[start_col_name].iloc[0]
-        meeting_end_time = meeting_data[end_col_name].iloc[-1]
-        meeting_duration = meeting_end_time - meeting_start_time
-        segments[meeting_id] = depth_score_to_topic_change_indexes(
-            depth_score_timeseries,
-            meeting_duration,
-            topic_segmentation_configs=topic_segmentation_configs)
-        # correct the indexes to be relative to the original dataframe
-        segments[meeting_id] = [
-            segment+2*textiling_hyperparameters.SENTENCE_COMPARISON_WINDOW+2
-            for segment in segments[meeting_id]]
-        segments[meeting_id].sort()
+            # "The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
+            # given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley."
+            # what's weird is this seems like different approach than what was in paper?? is it somehow equivalent?
+            depth_score_timeseries = depth_score(block_comparison_score_timeseries)
+            # produces list of length of comparison scores minus 2
+
+            meeting_start_time = meeting_data[start_col_name].iloc[0]
+            meeting_end_time = meeting_data[end_col_name].iloc[-1]
+            meeting_duration = meeting_end_time - meeting_start_time
+            segments[meeting_id] = depth_score_to_topic_change_indexes(
+                depth_score_timeseries,
+                meeting_duration,
+                topic_segmentation_configs=topic_segmentation_configs)
+            
+        elif textiling_hyperparameters.ID=="new_segmentation":  # new method is as described in paper
+            if DISPLAY_SIMILARITIES:
+                import matplotlib.pyplot as plt
+                plt.plot(block_comparison_score_timeseries)
+                plt.plot([np.mean(block_comparison_score_timeseries)]*len(block_comparison_score_timeseries))
+                plt.plot([np.mean(block_comparison_score_timeseries)-np.std(block_comparison_score_timeseries)]*len(block_comparison_score_timeseries))
+            segments[meeting_id] = statistical_segmentation(block_comparison_score_timeseries, stdevs = 1)
+
+        else:
+            raise NotImplementedError("TextTiling method not implemented")
+            
+        segments[meeting_id] = fix_indices(
+            segments[meeting_id],
+            topic_segmentation_configs.SENTENCE_COMPARISON_WINDOW,
+            textiling_hyperparameters.ID)
+        
         print(segments[meeting_id])
 
     return segments
