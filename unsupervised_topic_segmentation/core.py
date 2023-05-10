@@ -310,8 +310,12 @@ def topic_segmentation_bert(
         segments[meeting_id] = depth_score_to_topic_change_indexes(
             depth_score_timeseries,
             meeting_duration,
-            topic_segmentation_configs=topic_segmentation_configs,
-        )
+            topic_segmentation_configs=topic_segmentation_configs)
+        # correct the indexes to be relative to the original dataframe
+        segments[meeting_id] = [
+            segment+2*textiling_hyperparameters.SENTENCE_COMPARISON_WINDOW+2
+            for segment in segments[meeting_id]]
+        segments[meeting_id].sort()
         print(segments[meeting_id])
 
     return segments

@@ -74,7 +74,7 @@ def generate_segment(
         #reallocate sentences from shorter documents to last documents if necessary
         #note: this lets us incorporate smaller documents, rather than oversampling from larger documents
         text['reallocate']=text['length']-text['sentences_to_use']
-        text.loc[text['reallocate']>0,'reallocate'] = 0  ### DK: I think this always sets reallocate to 0 so below steps have no effect?
+        text.loc[text['reallocate']>0,'reallocate'] = 0  
         text['sentences_to_use']=text['sentences_to_use']+text['reallocate']
         text['reallocate_cum']=text['reallocate'].cumsum()
 
@@ -86,7 +86,7 @@ def generate_segment(
         #text.loc[text['sentences_start']<0,'sentences_start'] = 0 #prevent overflow: should only needed when doc_count=1
         text.iat[0,int(text.columns.get_indexer(['sentences_start']))]=0
     
-    else: 
+    else:
         text['sentences_to_use'] = text['length'] 
         text['sentences_start']=0
        
@@ -103,5 +103,3 @@ def try_create_test_data():
     t=transcript_pickle_to_pd()
     hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
     print(hold[2])
-
-
