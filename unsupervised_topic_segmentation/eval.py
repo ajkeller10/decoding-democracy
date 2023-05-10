@@ -1,14 +1,10 @@
-#!/usr/bin/env python3
 import logging
 from bisect import bisect
 from typing import Dict, Optional
 import pandas as pd
 
 from .core import topic_segmentation
-from .dataset import (
-    ami_dataset,
-    icsi_dataset,
-)
+from .dataset import ami_dataset, icsi_dataset
 from .types import TopicSegmentationAlgorithm, TopicSegmentationDatasets
 from nltk.metrics.segmentation import pk, windowdiff
 
@@ -61,10 +57,7 @@ def binary_labels_flattened(
     input_df,
     labels_df,
     meeting_id_col_name: str,
-    start_col_name: str,
-    end_col_name: str,
-    caption_col_name: str,
-):
+    start_col_name: str):
     """
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure flattened.
@@ -118,9 +111,7 @@ def binary_labels_top_level(
     labels_df,
     meeting_id_col_name: str,
     start_col_name: str,
-    end_col_name: str,
-    caption_col_name: str,
-):
+    end_col_name: str):
     """
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure only top level topics
@@ -240,29 +231,15 @@ def eval_topic_segmentation(
     meeting_id_col_name, start_col_name, end_col_name, caption_col_name, label_col_name = col_names
 
     prediction_segmentations = topic_segmentation(
-        topic_segmentation_algorithm,
-        input_df,
-        meeting_id_col_name,
-        start_col_name,
-        end_col_name,
-        caption_col_name,
+        topic_segmentation_algorithm,input_df,meeting_id_col_name,
+        start_col_name,end_col_name,caption_col_name,
     )
 
     if dataset_name is not None:
         flattened = binary_labels_flattened(
-            input_df,
-            label_df,
-            MEETING_ID_COL_NAME,
-            START_COL_NAME,
-            END_COL_NAME,
-            CAPTION_COL_NAME,)
+            input_df,label_df,MEETING_ID_COL_NAME,START_COL_NAME)
         top_level = binary_labels_top_level(
-            input_df,
-            label_df,
-            MEETING_ID_COL_NAME,
-            START_COL_NAME,
-            END_COL_NAME,
-            CAPTION_COL_NAME,)
+            input_df,label_df,MEETING_ID_COL_NAME,START_COL_NAME,END_COL_NAME)
         flattened_metrics = compute_metrics(
             prediction_segmentations, flattened, metric_name_suffix="flattened")
         top_level_metrics = compute_metrics(
