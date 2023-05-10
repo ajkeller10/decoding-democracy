@@ -1,7 +1,7 @@
 FILLERS = ["um", "uh", "oh", "hmm", "mm-hmm", "uh-uh", "you know"]
 
 
-def preprocessing(df, caption_col_name="caption", min_caption_len=20):
+def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_len=20):
     """Strips filler words and deletes sentences with 20 characters or less."""
     fillers += list(
         map(lambda filler: filler + " ", fillers)
@@ -13,7 +13,8 @@ def preprocessing(df, caption_col_name="caption", min_caption_len=20):
     df[caption_col_name].replace('<([^<>]+)>', "", regex=True, inplace=True)
 
     # divide up multi-sentence captions into new rows
-    df[caption_col_name] = df[caption_col_name].str.split(".").explode()
+    df[caption_col_name] = df[caption_col_name].str.split(".")
+    df = df.explode(caption_col_name)
 
     df = df[df[caption_col_name].str.len() > min_caption_len]
     df.reset_index(inplace=True)
