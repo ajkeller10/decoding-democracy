@@ -16,10 +16,18 @@ class RandomSegmentation(TopicSegmentationAlgorithm):
         self.RANDOM_THRESHOLD = random_threshold
         self.ID = 'random'
 
+    def __repr__(self):
+        return "RandomSegmentation(" + \
+            "RANDOM_THRESHOLD=" + str(self.RANDOM_THRESHOLD) + ")"
+
 class EvenSegmentation(TopicSegmentationAlgorithm):
     def __init__(self,k: int = 30):
         self.k = k
         self.ID = 'even'
+
+    def __repr__(self):
+        return "EvenSegmentation(" + \
+            "k=" + str(self.k) + ")"
 
 class TextTilingHyperparameters():
     def __init__(

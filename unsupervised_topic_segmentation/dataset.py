@@ -1,7 +1,7 @@
 import sys
 
 def preprocessing(df, caption_col_name):
-    fillers = ["um", "uh", "oh", "hmm", "you know", "like"]
+    fillers = ["um", "uh", "oh", "hmm", "you know", "like"]  # Drew: they remove like? seems odd
     fillers += list(
         map(lambda filler: filler + " ", fillers)
     )  # filler inside caption with other words
