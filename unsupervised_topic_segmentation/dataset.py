@@ -1,6 +1,7 @@
 import sys
 
 def preprocessing(df, caption_col_name):
+    """Strips filler words and deletes sentences with 20 characters or less."""
     fillers = ["um", "uh", "oh", "hmm", "you know", "like"]  # Drew: they remove like? seems odd
     fillers += list(
         map(lambda filler: filler + " ", fillers)
@@ -10,10 +11,10 @@ def preprocessing(df, caption_col_name):
     )  # make it case-insensitive
     df[caption_col_name].replace(fillers, [""] * len(fillers), regex=True, inplace=True)
 
-    captions_with_multiple_setences = len(df.loc[df[caption_col_name].isin(["."])])
-    if captions_with_multiple_setences > 0:
+    captions_with_multiple_sentences = len(df.loc[df[caption_col_name].isin(["."])])
+    if captions_with_multiple_sentences > 0:
         print(
-            f"WARNING: Found {captions_with_multiple_setences} captions with multiple sentences; sentence embeddings may be inaccurate.",
+            f"WARNING: Found {captions_with_multiple_sentences} captions with multiple sentences; sentence embeddings may be inaccurate.",
             file=sys.stderr,
         )
 
