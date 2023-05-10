@@ -1,6 +1,14 @@
 FILLERS = ["um", "uh", "oh", "hmm", "mm-hmm", "uh-uh", "you know"]
 
 
+def add_durations(df,id_col_name="meeting_id",caption_col_name="caption"):
+    df['duration'] = df[caption_col_name].apply(lambda x: len(x.split(' ')))  # 1 word/s
+    df['end_time'] = df.duration.cumsum()
+    df['start_time'] = df.duration.cumsum() - df.duration
+    df = df[[id_col_name,'start_time','end_time',caption_col_name]]
+    return df
+
+
 def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_len=20):
     """Strips filler words and deletes sentences with 20 characters or less."""
     fillers += list(
