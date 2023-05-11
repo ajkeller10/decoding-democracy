@@ -1,5 +1,4 @@
-import xmltodict
-
+import xmltodict_master.xmltodict as xmltodict
 
 def get_paths(source):
     paths = {}
@@ -8,8 +7,8 @@ def get_paths(source):
         paths = {
             'words'          : path + 'Words/',
             'dialogueActs'   : path + 'DialogueActs/',
-            # 'topics'         : path + 'topics/',
-            # 'segments'       : path + 'Segments/',
+            'topics'         : path + 'topics/',
+            'segments'       : path + 'Segments/',
             'abstractive'    : path + 'Contributions/Summarization/abstractive/',
             'extractive'     : path + 'Contributions/Summarization/extractive/',
             # 'corpusResources-meetings'    : path + 'corpusResources/meetings.xml',
