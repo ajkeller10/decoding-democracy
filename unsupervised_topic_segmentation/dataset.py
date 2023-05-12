@@ -21,7 +21,7 @@ def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_l
     df[caption_col_name].replace('<([^<>]+)>', "", regex=True, inplace=True)
 
     # divide up multi-sentence captions into new rows
-    df[caption_col_name] = df[caption_col_name].str.split(". ")
+    df[caption_col_name] = df[caption_col_name].str.split(".")
     df = df.explode(caption_col_name)
 
     df = df[df[caption_col_name].str.len() > min_caption_len]
