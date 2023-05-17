@@ -216,7 +216,9 @@ def eval_topic_segmentation(
     topic_segmentation_algorithm: TopicSegmentationAlgorithm,
     dataset_name: Optional[TopicSegmentationDatasets] = None,
     input_df: Optional[pd.DataFrame] = None,
-    col_names: Optional[tuple] = None
+    col_names: Optional[tuple] = None,
+    binary_label_encoding: Optional[bool] = False,
+    verbose: Optional[bool] = False
 ) -> Dict[str, float]:
     
     if dataset_name is not None:
@@ -236,7 +238,7 @@ def eval_topic_segmentation(
 
     prediction_segmentations = topic_segmentation(
         topic_segmentation_algorithm,input_df,meeting_id_col_name,
-        start_col_name,end_col_name,caption_col_name)
+        start_col_name,end_col_name,caption_col_name,verbose=verbose)
 
     if dataset_name is not None:
         flattened = binary_labels_flattened(
@@ -244,17 +246,23 @@ def eval_topic_segmentation(
         top_level = binary_labels_top_level(
             input_df,label_df,MEETING_ID_COL_NAME,START_COL_NAME,END_COL_NAME)
         flattened_metrics = compute_metrics(
-            prediction_segmentations, flattened, metric_name_suffix="flattened")
+            prediction_segmentations, flattened, metric_name_suffix="flattened",verbose=verbose)
         top_level_metrics = compute_metrics(
-            prediction_segmentations, top_level, metric_name_suffix="top_level")
+            prediction_segmentations, top_level, metric_name_suffix="top_level",verbose=verbose)
         return merge_metrics(flattened_metrics, top_level_metrics)
     else:
-        return compute_metrics(
-            prediction_segmentations,
-            recode_labels(input_df,meeting_id_col_name,label_col_name))
+        if binary_label_encoding:
+            labels = {}
+            for meeting_id in input_df[meeting_id_col_name].unique():
+                labels[meeting_id] = input_df[input_df[meeting_id_col_name]==meeting_id][label_col_name].to_list()
+        else:
+            labels = recode_labels(input_df,meeting_id_col_name,label_col_name)
+
+        return compute_metrics(prediction_segmentations,labels,verbose=verbose)
     
     
-def multiple_eval(data_function,iterations,test_algorithm,even_algorithm,random_algorithm):
+def multiple_eval(
+        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False):
 
     #test_transcripts = []
     #segmentations = []
@@ -274,8 +282,17 @@ def multiple_eval(data_function,iterations,test_algorithm,even_algorithm,random_
         test_data = preprocessing(test_data, 'caption')
 
         metrics.append(
-            [eval.eval_topic_segmentation(topic_segmentation_algorithm=test_algorithm,input_df = test_data),
-            eval.eval_topic_segmentation(topic_segmentation_algorithm=even_algorithm,input_df = test_data),
-            eval.eval_topic_segmentation(topic_segmentation_algorithm=random_algorithm,input_df = test_data)])
+            [eval_topic_segmentation(
+                topic_segmentation_algorithm=test_algorithm,input_df=test_data,verbose=verbose),
+            eval_topic_segmentation(
+                topic_segmentation_algorithm=even_algorithm,input_df=test_data,verbose=verbose),
+            eval_topic_segmentation(
+                topic_segmentation_algorithm=random_algorithm,input_df=test_data,verbose=verbose)])
         
-    return n_captions, n_segments, metrics
+    flattened_list = [{f'dict{i+1}_{k}': v for i, d in enumerate(trial) for k, v in d.items()} for trial in metrics]
+    output = pd.DataFrame(flattened_list)
+    output.columns = ['test_pk','test_windiff','even_pk','even_windiff','random_pk','random_windiff']
+    output['n_captions'] = n_captions
+    output['n_segments'] = n_segments
+        
+    return output
