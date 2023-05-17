@@ -2,6 +2,7 @@ import logging
 from bisect import bisect
 from typing import Dict, Optional
 import pandas as pd
+import numpy as np
 
 from .core import topic_segmentation
 from .dataset import ami_dataset, icsi_dataset
@@ -31,15 +32,17 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
         reference_segmentation = "".join(map(str, reference_segmentation))
         predicted_segmentation = "".join(map(str, predicted_segmentation))
 
-        _pk.append(pk(reference_segmentation, predicted_segmentation))
+        try:
+            _pk.append(pk(reference_segmentation, predicted_segmentation))
+        except ZeroDivisionError:
+            _pk.append(np.nan)  # TODO: replace with correct solution
 
         # setting k to default value used in CoAP (pk) function for both evaluation functions
-        k = int(
-            round(
-                len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)
-            )
-        )
-        _windiff.append(windowdiff(reference_segmentation, predicted_segmentation, k))
+        k = int(round(len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)))
+        try:
+            _windiff.append(windowdiff(reference_segmentation, predicted_segmentation, k))
+        except ZeroDivisionError:
+            _windiff.append(np.nan)  # TODO: replace with correct solution
 
     avg_pk = sum(_pk) / len(binary_labels)
     avg_windiff = sum(_windiff) / len(binary_labels)
