@@ -17,7 +17,7 @@ CAPTION_COL_NAME = "caption"
 LABEL_COL_NAME = "label"
 
 
-def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=""):
+def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix="", verbose=False):
     #print(prediction_segmentations)
     #print(binary_labels)
     _pk, _windiff = [], []
@@ -47,8 +47,9 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
     avg_pk = sum(_pk) / len(binary_labels)
     avg_windiff = sum(_windiff) / len(binary_labels)
 
-    print("Pk on {} meetings: {}".format(len(binary_labels), avg_pk))
-    print("WinDiff on {} meetings: {}".format(len(binary_labels), avg_windiff))
+    if verbose:
+        print("Pk on {} meetings: {}".format(len(binary_labels), avg_pk))
+        print("WinDiff on {} meetings: {}".format(len(binary_labels), avg_windiff))
 
     return {
         "average_Pk_" + str(metric_name_suffix): avg_pk,
