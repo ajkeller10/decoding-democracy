@@ -1,4 +1,4 @@
-name: councildata
+name: py39
 channels:
   - pytorch
   - huggingface
@@ -177,4 +177,4 @@ dependencies:
     - rsa==4.9
     - typing-inspect==0.8.0
     - yarl==1.9.1
-prefix: /home/opinney/anaconda3/envs/councildata
+prefix: /home/opinney/anaconda3/envs/py39

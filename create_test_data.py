@@ -4,7 +4,6 @@ import random
 import numpy as np
 import itertools
 
-
 def transcript_pickle_to_pd():
     '''
     load transcript pickle into data frame
@@ -16,6 +15,48 @@ def transcript_pickle_to_pd():
     t = pd.DataFrame(transcripts.keys(),columns=["transcript_id"])
     t['sentences']=t["transcript_id"].apply(lambda x: transcripts[x])
     return t 
+
+def jsons_to_dict_list(topic_path):
+    '''
+    load json transcripts into list of transcripts
+    '''
+    dict_list=[]
+
+    file_paths = os.listdir(topic_path)
+    file_paths = list(filter(lambda x: x.endswith(".json"),file_paths))
+
+    for file_path in file_paths:    
+        with open( topic_path + file_path ) as file:
+            json_load = json.loads(file.read())
+        dict_list.append(json_load)
+
+    return dict_list
+
+def clean_topic_json(topic_json,transcript_id,fillers):
+    '''
+    clean list of topic jsons and combine results into cleaned df
+
+    Args:
+        topic_json: list of topic dictionaries containing text
+        filler: list of filler words to be excluded in cleaning 
+    
+    Returns:
+        df_clean: df with all sentences and corresponding topics post cleaning
+    '''
+    df_temp=pd.DataFrame()
+    has_topic_desc=len(set([x['topic'] for x in topic_json]))>1
+
+
+    for index, topic in enumerate(topic_json): 
+        text = [x['text'] for x in topic['dialogueacts']]
+        if df_temp.empty:
+            df_temp=pd.DataFrame({'transcript_id':transcript_id,'sentences':text,'topic_count':index,'topic_desc':topic['topic'],'has_topic_desc':has_topic_desc})
+        else:
+            df_temp=pd.concat([df_temp,pd.DataFrame({'transcript_id':transcript_id,'sentences':text,'topic_count':index,'topic_desc':topic['topic'],'has_topic_desc':has_topic_desc})])    
+
+    df_clean=dataset.preprocessing(df_temp,'sentences',fillers.copy(),min_caption_len=20)
+    
+    return df_clean
 
 
 def generate_segment(
