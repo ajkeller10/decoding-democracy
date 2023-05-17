@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from .core import topic_segmentation
-from .dataset import ami_dataset, icsi_dataset
+from .dataset import ami_dataset, icsi_dataset, add_durations, preprocessing
 from .types import TopicSegmentationAlgorithm, TopicSegmentationDatasets
 from nltk.metrics.segmentation import pk, windowdiff
 
@@ -252,3 +252,30 @@ def eval_topic_segmentation(
         return compute_metrics(
             prediction_segmentations,
             recode_labels(input_df,meeting_id_col_name,label_col_name))
+    
+    
+def multiple_eval(data_function,iterations,test_algorithm,even_algorithm,random_algorithm):
+
+    #test_transcripts = []
+    #segmentations = []
+
+    n_captions = []
+    n_segments = []
+    metrics = []
+
+    for i in range(iterations):
+
+        results,labels,topics,doc_count = data_function()
+        n_captions.append(len(results))
+        n_segments.append(doc_count)
+        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1})
+        test_data = add_durations(test_data)
+        test_data = test_data[['meeting_id','start_time','end_time','caption','label']]
+        test_data = preprocessing(test_data, 'caption')
+
+        metrics.append(
+            [eval.eval_topic_segmentation(topic_segmentation_algorithm=test_algorithm,input_df = test_data),
+            eval.eval_topic_segmentation(topic_segmentation_algorithm=even_algorithm,input_df = test_data),
+            eval.eval_topic_segmentation(topic_segmentation_algorithm=random_algorithm,input_df = test_data)])
+        
+    return n_captions, n_segments, metrics
