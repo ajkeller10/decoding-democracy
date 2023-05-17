@@ -9,7 +9,7 @@ def add_durations(df,id_col_name="meeting_id",caption_col_name="caption"):
     return df
 
 
-def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_len=20):
+def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_len=20, divide_multi_sentence=False):
     """Strips filler words and deletes sentences with 20 characters or less."""
     fillers += list(
         map(lambda filler: filler + " ", fillers)
@@ -20,9 +20,10 @@ def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_l
     df[caption_col_name].replace(fillers, [""] * len(fillers), regex=True, inplace=True)
     df[caption_col_name].replace('<([^<>]+)>', "", regex=True, inplace=True)
 
-    # divide up multi-sentence captions into new rows
-    df[caption_col_name] = df[caption_col_name].str.split(".")
-    df = df.explode(caption_col_name)
+    if divide_multi_sentence:
+        # divide up multi-sentence captions into new rows
+        df[caption_col_name] = df[caption_col_name].str.split(". ")
+        df = df.explode(caption_col_name)
 
     df = df[df[caption_col_name].str.len() > min_caption_len]
     df.reset_index(inplace=True)

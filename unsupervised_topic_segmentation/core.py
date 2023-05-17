@@ -280,17 +280,20 @@ def topic_segmentation_bert(
     start_col_name: str,
     end_col_name: str,
     caption_col_name: str,
-    topic_segmentation_configs: BERTSegmentation):
+    topic_segmentation_configs: BERTSegmentation,
+    embedding_col_name = "embedding"):
 
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 
-    # parallel inference
-    batches_features = []
-    for batch_sentences in split_list(
-        df[caption_col_name], PARALLEL_INFERENCE_INSTANCES
-    ): # splits into sequential batches such that total number of batches equals INSTANCES value
-        batches_features.append(get_features_from_sentence(batch_sentences)) # list of tensors of size (1,768), one for each sentence
-    features = flatten_features(batches_features)   # changes back to list of length 768 tensors, one for each sentence in dataset
+    if embedding_col_name not in df.columns:
+        batches_features = []
+        for batch_sentences in split_list(
+            df[caption_col_name], PARALLEL_INFERENCE_INSTANCES
+        ): # splits into sequential batches such that total number of batches equals INSTANCES value
+            batches_features.append(get_features_from_sentence(batch_sentences)) # list of tensors of size (1,768), one for each sentence
+        features = flatten_features(batches_features)   # changes back to list of length 768 tensors, one for each sentence in dataset
+    else:
+        features = list(df[embedding_col_name])
 
     segments = {}
     for meeting_id in set(df[meeting_id_col_name]):
