@@ -328,12 +328,22 @@ def topic_segmentation_bert(
                 topic_segmentation_configs=topic_segmentation_configs)
             
         elif textiling_hyperparameters.ID=="new_segmentation":  # new method is as described in paper
-            if verbose and DISPLAY_SIMILARITIES:
+            if verbose:
                 import matplotlib.pyplot as plt
                 plt.plot(block_comparison_score_timeseries)
-                plt.plot([np.mean(block_comparison_score_timeseries)]*len(block_comparison_score_timeseries))
-                plt.plot([np.mean(block_comparison_score_timeseries)-np.std(block_comparison_score_timeseries)]*len(block_comparison_score_timeseries))
-            segments[meeting_id] = statistical_segmentation(block_comparison_score_timeseries, stdevs = 1)
+                plt.plot([
+                    np.mean(block_comparison_score_timeseries)]*
+                    len(block_comparison_score_timeseries))
+                plt.plot([
+                    np.mean(block_comparison_score_timeseries)-
+                    textiling_hyperparameters.STDEVS*np.std(block_comparison_score_timeseries)]*
+                    len(block_comparison_score_timeseries))
+                plt.xlabel('Sentence Index')
+                plt.ylabel('Similarity Score')
+                plt.show()
+            segments[meeting_id] = statistical_segmentation(
+                block_comparison_score_timeseries, 
+                stdevs = textiling_hyperparameters.STDEVS)
 
         else:
             raise NotImplementedError("TextTiling method not implemented")
