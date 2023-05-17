@@ -17,11 +17,6 @@ PARALLEL_INFERENCE_INSTANCES = 20
 DISPLAY_SIMILARITIES = False
 
 
-def PrintMessage(msg, x):
-    print(msg)
-    print(x)
-
-
 def depth_score(timeseries):
     """
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
@@ -248,7 +243,8 @@ def topic_segmentation(
     meeting_id_col_name: str,
     start_col_name: str,
     end_col_name: str,
-    caption_col_name: str):
+    caption_col_name: str,
+    verbose: bool = False,):
     """
     Input:
         df: dataframe with meeting captions
@@ -263,13 +259,14 @@ def topic_segmentation(
             start_col_name,
             end_col_name,
             caption_col_name,
-            topic_segmentation_algorithm)
+            topic_segmentation_algorithm,
+            verbose=verbose)
     elif topic_segmentation_algorithm.ID == "random":
         return topic_segmentation_baselines.topic_segmentation_random(
-            df, meeting_id_col_name, topic_segmentation_algorithm.RANDOM_THRESHOLD)
+            df, meeting_id_col_name, topic_segmentation_algorithm.RANDOM_THRESHOLD, verbose=verbose)
     elif topic_segmentation_algorithm.ID == "even":
         return topic_segmentation_baselines.topic_segmentation_even(
-            df, meeting_id_col_name, topic_segmentation_algorithm.k)
+            df, meeting_id_col_name, topic_segmentation_algorithm.k, verbose=verbose)
     else:
         raise NotImplementedError("Algorithm not implemented")
 
@@ -281,7 +278,8 @@ def topic_segmentation_bert(
     end_col_name: str,
     caption_col_name: str,
     topic_segmentation_configs: BERTSegmentation,
-    embedding_col_name = "embedding"):
+    embedding_col_name = "embedding",
+    verbose: bool = False):
 
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 
@@ -330,7 +328,7 @@ def topic_segmentation_bert(
                 topic_segmentation_configs=topic_segmentation_configs)
             
         elif textiling_hyperparameters.ID=="new_segmentation":  # new method is as described in paper
-            if DISPLAY_SIMILARITIES:
+            if verbose and DISPLAY_SIMILARITIES:
                 import matplotlib.pyplot as plt
                 plt.plot(block_comparison_score_timeseries)
                 plt.plot([np.mean(block_comparison_score_timeseries)]*len(block_comparison_score_timeseries))
@@ -345,6 +343,7 @@ def topic_segmentation_bert(
             topic_segmentation_configs.SENTENCE_COMPARISON_WINDOW,
             textiling_hyperparameters.ID)
         
-        print(segments[meeting_id])
+        if verbose:
+            print(segments[meeting_id])
 
     return segments
