@@ -4,6 +4,7 @@ import random
 import numpy as np
 import itertools
 
+
 def transcript_pickle_to_pd():
     '''
     load transcript pickle into data frame
@@ -16,14 +17,10 @@ def transcript_pickle_to_pd():
     t['sentences']=t["transcript_id"].apply(lambda x: transcripts[x])
     return t 
 
-import pickle
-import pandas as pd
-import random
-import numpy as np
-import itertools
 
 def generate_segment(
-        t : pd.DataFrame, doc_count_limit: int = 10, sentence_min: int = 20, supervised: bool = False) -> tuple: 
+        t : pd.DataFrame = transcript_pickle_to_pd(),
+        doc_count_limit: int = 10, sentence_min: int = 20, supervised: bool = False) -> tuple: 
     '''
     Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
 
