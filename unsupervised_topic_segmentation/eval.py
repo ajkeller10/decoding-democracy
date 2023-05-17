@@ -217,6 +217,7 @@ def eval_topic_segmentation(
     dataset_name: Optional[TopicSegmentationDatasets] = None,
     input_df: Optional[pd.DataFrame] = None,
     col_names: Optional[tuple] = None,
+    binary_label_encoding: Optional[bool] = False,
     verbose: Optional[bool] = False
 ) -> Dict[str, float]:
     
@@ -250,10 +251,14 @@ def eval_topic_segmentation(
             prediction_segmentations, top_level, metric_name_suffix="top_level",verbose=verbose)
         return merge_metrics(flattened_metrics, top_level_metrics)
     else:
-        return compute_metrics(
-            prediction_segmentations,
-            recode_labels(input_df,meeting_id_col_name,label_col_name),
-            verbose=verbose)
+        if binary_label_encoding:
+            labels = {}
+            for meeting_id in input_df[meeting_id_col_name].unique():
+                labels[meeting_id] = input_df[input_df[meeting_id_col_name]==meeting_id][label_col_name].to_list()
+        else:
+            labels = recode_labels(input_df,meeting_id_col_name,label_col_name)
+
+        return compute_metrics(prediction_segmentations,labels,verbose=verbose)
     
     
 def multiple_eval(
