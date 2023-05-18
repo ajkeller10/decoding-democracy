@@ -1,0 +1,32 @@
+Instructions for activating aws resources
+
+1. download access credentials in csv and save in secure location
+
+2. in terminal type "aws configure" and be prepared to use credentials. Use us-east-1 and json format
+
+3. create s3 bucket
+aws s3api create-bucket --bucket decoding-democracy --region us-east-1
+
+Alternatively, create bucket here: https://s3.console.aws.amazon.com/s3/buckets?region=us-east-1
+
+Be prepared to delete after usage
+aws s3api delete-bucket --bucket decoding-democracy
+
+4. create boto3 client connection 
+s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+
+5. upload data to bucket
+s3.upload_file('data_for_s3.pickle', 'decoding-democracy', 'unembedded.csv')
+
+
+note: i got stuck on role permissions for creating
+aws_lambda=boto3.client('lambda')
+iam_client = boto3.client('iam')
+role = iam_client.get_role(RoleName='decoding_democracy_lambda')
+#check job definitions to make sure that the execution role was defined correctly
+
+
+
+next steps
+1) try not doing queue and just running lambda
+2) log in and delete form olpinney2 
