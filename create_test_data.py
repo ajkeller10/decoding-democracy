@@ -3,8 +3,12 @@ import pandas as pd
 import random
 import numpy as np
 import itertools
+import json
+import os
+from unsupervised_topic_segmentation import dataset
 
-def transcript_pickle_to_pd():
+
+def transcript_pickle_to_df():
     '''
     load transcript pickle into data frame
     '''
@@ -15,6 +19,7 @@ def transcript_pickle_to_pd():
     t = pd.DataFrame(transcripts.keys(),columns=["transcript_id"])
     t['sentences']=t["transcript_id"].apply(lambda x: transcripts[x])
     return t 
+
 
 def jsons_to_dict_list(topic_path):
     '''
@@ -45,7 +50,6 @@ def clean_topic_json(topic_json,transcript_id,fillers):
     '''
     df_temp=pd.DataFrame()
     has_topic_desc=len(set([x['topic'] for x in topic_json]))>1
-
 
     for index, topic in enumerate(topic_json): 
         text = [x['text'] for x in topic['dialogueacts']]
@@ -158,9 +162,9 @@ def generate_segment(
 
     return results,labels,topics,doc_count
 
-
 def try_create_test_data():
     t=transcript_pickle_to_pd()
     hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
     print(hold[2])
+
 
