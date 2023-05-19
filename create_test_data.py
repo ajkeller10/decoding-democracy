@@ -5,18 +5,44 @@ import numpy as np
 import itertools
 import json
 import os
+from unsupervised_topic_segmentation import dataset
+import ast
+import torch
 
-def transcript_pickle_to_pd():
+
+def transcript_pickle_to_df():
     '''
     load transcript pickle into data frame
     '''
     # import data 
-    with open("transcripts.pickle", "rb") as f:
+    with open("data/transcripts.pickle", "rb") as f:
         transcripts = pickle.load(f)
 
     t = pd.DataFrame(transcripts.keys(),columns=["transcript_id"])
     t['sentences']=t["transcript_id"].apply(lambda x: transcripts[x])
     return t 
+
+def snappy_parquet_to_df(path):
+    '''
+    load snappy parquet to data frame with transcript per row
+    '''
+
+    df = pd.read_parquet(path)
+    df['embeddings'] = df['finished_embeddings_str'].apply(lambda x: torch.FloatTensor(list(ast.literal_eval(x))[0]))
+
+    if 'topic_count' in df.columns: 
+        return df.groupby(['transcript_id'], as_index = False).agg({'sentences':lambda x: list(x),
+                                                        'topic_count':lambda x: list(x),
+                                                        'topic_desc':lambda x: list(x),
+                                                        'has_topic_desc':lambda x: list(x),
+                                                        'embeddings':lambda x: list(x)
+                                                        })
+    else: 
+        return df.groupby(['transcript_id'], as_index = False).agg({'sentences':lambda x: list(x),
+                                                        'embeddings':lambda x: list(x)
+                                                        })
+
+
 
 def jsons_to_dict_list(topic_path):
     '''
@@ -48,7 +74,6 @@ def clean_topic_json(topic_json,transcript_id,fillers):
     df_temp=pd.DataFrame()
     has_topic_desc=len(set([x['topic'] for x in topic_json]))>1
 
-
     for index, topic in enumerate(topic_json): 
         text = [x['text'] for x in topic['dialogueacts']]
         if df_temp.empty:
@@ -62,7 +87,7 @@ def clean_topic_json(topic_json,transcript_id,fillers):
 
 
 def generate_segment(
-        t : pd.DataFrame = transcript_pickle_to_pd(),
+        t : pd.DataFrame = transcript_pickle_to_df(),
         doc_count_limit: int = 10, sentence_min: int = 20, supervised: bool = False) -> tuple: 
     '''
     Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
@@ -137,7 +162,6 @@ def generate_segment(
 
         #the first segment start at 0, and the last end at -1
         text.iat[-1,int(text.columns.get_indexer(['sentences_start']))]=text.iloc[-1]['length']-text.iloc[-1]['sentences_to_use']+text.iloc[-1]['reallocate_cum']    
-        #text.loc[text['sentences_start']<0,'sentences_start'] = 0 #prevent overflow: should only needed when doc_count=1
         text.iat[0,int(text.columns.get_indexer(['sentences_start']))]=0
     
     else:
@@ -160,8 +184,7 @@ def generate_segment(
 
     return results,labels,topics,doc_count
 
-
 def try_create_test_data():
-    t=transcript_pickle_to_pd()
+    t=transcript_pickle_to_df()
     hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
     print(hold[2])
