@@ -3,6 +3,8 @@ import pandas as pd
 import random
 import numpy as np
 import itertools
+import json
+import os
 
 def transcript_pickle_to_pd():
     '''
@@ -163,4 +165,3 @@ def try_create_test_data():
     t=transcript_pickle_to_pd()
     hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
     print(hold[2])
-
