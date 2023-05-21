@@ -190,5 +190,3 @@ def try_create_test_data():
     t=transcript_pickle_to_df()
     hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
     print(hold[2])
-
-

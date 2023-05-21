@@ -1,6 +1,9 @@
 # Project
 icsi_dataset/
 parliamentary_dataset/
+data/transcripts_with_embeds.pickle
+*.parquet
+*.Identifier
 
 # Mac
 *.DS_Store
