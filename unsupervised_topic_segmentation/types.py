@@ -29,6 +29,22 @@ class EvenSegmentation(TopicSegmentationAlgorithm):
         return "EvenSegmentation(" + \
             "k=" + str(self.k) + ")"
     
+class NoneSegmentation(TopicSegmentationAlgorithm):
+    def __init__(self):
+        self.ID = 'none'
+
+    def __repr__(self):
+        return "NoneSegmentation"
+    
+class LexicalSegmentation(TopicSegmentationAlgorithm):
+    def __init__(self, split_vocabulary: list = ['agenda']):
+        self.SPLIT_VOCABULARY = split_vocabulary
+        self.ID = 'lexical'
+
+    def __repr__(self):
+        return "LexicalSegmentation(" + \
+            "SPLIT_VOCABULARY=" + str(self.SPLIT_VOCABULARY) + ")"
+    
 class TextTilingHyperparameters():
     ID = ''
 

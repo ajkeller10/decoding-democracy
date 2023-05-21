@@ -1,5 +1,6 @@
 from random import random
 import pandas as pd
+import numpy as np
 
 
 SPLIT_VOCAB  = ['agenda']
@@ -45,7 +46,7 @@ def topic_segmentation_none(
     df: pd.DataFrame,
     meeting_id_col_name: str):
 
-    return {[] for _ in set(df[meeting_id_col_name])}
+    return {id:[] for id in set(df[meeting_id_col_name])}
 
 
 def topic_segmentation_lexical(
@@ -58,10 +59,10 @@ def topic_segmentation_lexical(
     segments = {}
     for meeting_id in set(df[meeting_id_col_name]):
         lexical_segmentation = []
-        for i in range(sum(df[meeting_id_col_name] == meeting_id)):
-            if df[df[meeting_id_col_name] == meeting_id][caption_col_name].iloc[
-                i].str.contains(split_vocabulary).any():
-                lexical_segmentation.append(i)
+        data = df[df[meeting_id_col_name] == meeting_id][caption_col_name]
+        found = [data.str.contains(i) for i in split_vocabulary]
+        result = pd.DataFrame(found).T.any(axis=1)
+        lexical_segmentation = np.nonzero(result)[0].tolist()
         if verbose:
             print(f"Lexical segmentation: {lexical_segmentation}")
         segments[meeting_id] = lexical_segmentation

@@ -2,6 +2,7 @@ import logging
 from bisect import bisect
 from typing import Dict, Optional
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
 
 from .core import topic_segmentation
@@ -239,7 +240,11 @@ def eval_topic_segmentation(
 
     prediction_segmentations = topic_segmentation(
         topic_segmentation_algorithm,input_df,meeting_id_col_name,
-        start_col_name,end_col_name,caption_col_name,verbose=verbose)
+        start_col_name,end_col_name,caption_col_name,
+        verbose=verbose,return_plot=verbose)
+    
+    if verbose and topic_segmentation_algorithm.ID=="bert":
+        prediction_segmentations, fig, ax = prediction_segmentations
 
     if dataset_name is not None:
         flattened = binary_labels_flattened(
@@ -259,11 +264,18 @@ def eval_topic_segmentation(
         else:
             labels = recode_labels(input_df,meeting_id_col_name,label_col_name)
 
+        if verbose and topic_segmentation_algorithm.ID=="bert":
+            import matplotlib.pyplot as plt
+            for meeting_id in input_df[meeting_id_col_name].unique():
+                for i in np.where(pd.Series(labels[meeting_id]) == 1)[0]:
+                    ax.axvline(x=i, color='b',alpha=0.3)
+                fig.canvas.draw_idle()
+                plt.show()
+
         if return_segmentation:
             return compute_metrics(prediction_segmentations,labels,verbose=verbose), prediction_segmentations
         else:
             return compute_metrics(prediction_segmentations,labels,verbose=verbose)
-    
     
 def multiple_eval(
         data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False,embeddings=False):
