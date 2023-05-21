@@ -38,8 +38,8 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
             _pk.append(np.nan)  # TODO: replace with correct solution
 
         # setting k to default value used in CoAP (pk) function for both evaluation functions
-        k = int(round(len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)))
         try:
+            k = int(round(len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)))
             _windiff.append(windowdiff(reference_segmentation, predicted_segmentation, k))
         except ZeroDivisionError:
             _windiff.append(np.nan)  # TODO: replace with correct solution
