@@ -287,6 +287,7 @@ def topic_segmentation_bert(
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 
     if embedding_col_name not in df.columns:
+        print('No embedding column found, running RoBERTa inference.')
         batches_features = []
         for batch_sentences in split_list(
             df[caption_col_name], PARALLEL_INFERENCE_INSTANCES

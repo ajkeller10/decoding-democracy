@@ -277,12 +277,12 @@ def multiple_eval(
 
     for i in range(iterations):
 
-        results,labels,topics,doc_count = data_function()
+        results,embedding,labels,topics,doc_count = data_function()
         n_captions.append(len(results))
         n_segments.append(doc_count)
-        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1})
+        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1,'embedding':embedding})
         test_data = add_durations(test_data)
-        test_data = test_data[['meeting_id','start_time','end_time','caption','label']]
+        test_data = test_data[['meeting_id','start_time','end_time','caption','label','embedding']]
         test_data = preprocessing(test_data, 'caption')
 
         metrics.append(
