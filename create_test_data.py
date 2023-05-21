@@ -170,13 +170,18 @@ def generate_segment(
        
     #get sentences
     text['results']=text.apply(lambda x: x['sentences'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
+    text['labels']=text.apply(lambda x: [x['index']] * x['sentences_to_use'],axis=1)
     if embeddings:
         text['embedding']=text.apply(lambda x: x['embedding'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
     text['labels']=text.apply(lambda x: [x['index']] * x['sentences_to_use'],axis=1)
+    
     results = list(itertools.chain.from_iterable(text['results']))
+    labels = list(itertools.chain.from_iterable(text['labels']))
+    
     if embeddings:
         embedding = list(itertools.chain.from_iterable(text['embedding']))
-    labels = list(itertools.chain.from_iterable(text['labels']))
+    else:
+        embedding=None
         
     if labeled and 'topic_counts' in text.columns:
         text['topics']=text.apply(lambda x: x['topic_counts'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
@@ -186,10 +191,7 @@ def generate_segment(
     else:
         topics = None
 
-    if embeddings:
-        return results, embedding, labels, topics, doc_count
-    else:
-        return results, labels, topics, doc_count
+    return results, embedding, labels, topics, doc_count
 
 def try_create_test_data():
     t=transcript_pickle_to_df()
