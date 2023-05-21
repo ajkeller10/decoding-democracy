@@ -4,6 +4,7 @@ import torch
 from . import baselines as topic_segmentation_baselines
 from .types import TopicSegmentationAlgorithm, BERTSegmentation
 from transformers import RobertaConfig, RobertaModel, AutoTokenizer, AutoModel
+from typing import Optional
 
 
 # pretrained Roberta model
@@ -240,12 +241,12 @@ def fix_indices(segments, window_size, segmenting_method):
 def topic_segmentation(
     topic_segmentation_algorithm: TopicSegmentationAlgorithm,
     df: pd.DataFrame,
-    meeting_id_col_name: str = "meeting_id",
-    start_col_name: str = "start",
-    end_col_name: str = "end",
-    caption_col_name: str = "caption",
-    embedding_col_name: str = "embedding",
-    verbose: bool = False):
+    meeting_id_col_name: Optional[str] = "meeting_id",
+    start_col_name: Optional[str] = "start",
+    end_col_name: Optional[str] = "end",
+    caption_col_name: Optional[str] = "caption",
+    embedding_col_name: Optional[str] = "embedding",
+    verbose: Optional[bool] = False):
     """
     Input:
         df: dataframe with meeting captions
@@ -255,12 +256,12 @@ def topic_segmentation(
 
     if topic_segmentation_algorithm.ID == "bert":
         return topic_segmentation_bert(
+            topic_segmentation_algorithm,
             df,
             meeting_id_col_name,
             start_col_name,
             end_col_name,
             caption_col_name,
-            topic_segmentation_algorithm,
             embedding_col_name,
             verbose=verbose)
     elif topic_segmentation_algorithm.ID == "random":
@@ -274,12 +275,12 @@ def topic_segmentation(
 
 
 def topic_segmentation_bert(
+    topic_segmentation_configs: BERTSegmentation,
     df: pd.DataFrame,
     meeting_id_col_name: str,
-    start_col_name: str,
-    end_col_name: str,
-    caption_col_name: str,
-    topic_segmentation_configs: BERTSegmentation,
+    start_col_name: Optional[str] = "start",
+    end_col_name: Optional[str] = "end",
+    caption_col_name: Optional[str] = "caption",
     embedding_col_name = "embedding",
     verbose: bool = False):
 
