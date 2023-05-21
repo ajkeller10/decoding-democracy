@@ -240,11 +240,12 @@ def fix_indices(segments, window_size, segmenting_method):
 def topic_segmentation(
     topic_segmentation_algorithm: TopicSegmentationAlgorithm,
     df: pd.DataFrame,
-    meeting_id_col_name: str,
-    start_col_name: str,
-    end_col_name: str,
-    caption_col_name: str,
-    verbose: bool = False,):
+    meeting_id_col_name: str = "meeting_id",
+    start_col_name: str = "start",
+    end_col_name: str = "end",
+    caption_col_name: str = "caption",
+    embedding_col_name: str = "embedding",
+    verbose: bool = False):
     """
     Input:
         df: dataframe with meeting captions
@@ -260,6 +261,7 @@ def topic_segmentation(
             end_col_name,
             caption_col_name,
             topic_segmentation_algorithm,
+            embedding_col_name,
             verbose=verbose)
     elif topic_segmentation_algorithm.ID == "random":
         return topic_segmentation_baselines.topic_segmentation_random(
