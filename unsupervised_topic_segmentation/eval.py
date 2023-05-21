@@ -266,7 +266,7 @@ def eval_topic_segmentation(
     
     
 def multiple_eval(
-        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False):
+        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False,embeddings=False):
 
     #test_transcripts = []
     #segmentations = []
@@ -277,7 +277,11 @@ def multiple_eval(
 
     for i in range(iterations):
 
-        results,embedding,labels,topics,doc_count = data_function()
+        if embeddings:
+            results,embedding,labels,topics,doc_count = data_function(embeddings=embeddings)
+        else:
+            results,labels,topics,doc_count = data_function(embeddings=embeddings)
+            embedding = None
         n_captions.append(len(results))
         n_segments.append(doc_count)
         test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1,'embedding':embedding})
