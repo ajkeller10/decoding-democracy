@@ -1,3 +1,8 @@
+import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
+import numpy as np
+
+
 FILLERS = ["um", "uh", "oh", "hmm", "mm-hmm", "uh-uh", "you know"]
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
 import torch
 from . import baselines as topic_segmentation_baselines
 from .types import TopicSegmentationAlgorithm, BERTSegmentation
@@ -64,13 +65,14 @@ def compute_window(timeseries, start_index, end_index):
 
     [window_size, 768] -> [1, 768]
     """
-    stack = torch.stack([features[0] for features in timeseries[start_index:end_index]])
-    stack = stack.unsqueeze(
-        0
-    )  # https://jbencook.com/adding-a-dimension-to-a-tensor-in-pytorch/
-    stack_size = end_index - start_index
-    pooling = torch.nn.MaxPool2d((stack_size - 1, 1))
-    return pooling(stack)
+    with torch.no_grad():
+        stack = torch.stack([features[0] for features in timeseries[start_index:end_index]])
+        stack = stack.unsqueeze(
+            0
+        )  # https://jbencook.com/adding-a-dimension-to-a-tensor-in-pytorch/
+        stack_size = end_index - start_index
+        pooling = torch.nn.MaxPool2d((stack_size - 1, 1))
+        return pooling(stack)
 
 
 def block_comparison_score(timeseries, k):
@@ -108,12 +110,13 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
             batch_features.append(sentence_features[0])            
     else:  # rewritten to (hopefully) do the same thing
         for sentence in batch_sentences:
-            tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
-            input_ids, attention_mask = tokens["input_ids"], tokens["attention_mask"]
-            all_layers = roberta_model_new(
-                input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states
-            pooling = torch.nn.AvgPool2d((input_ids.size(1), 1))
-            sentence_features = pooling(all_layers[layer])
+            with torch.no_grad():
+                tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
+                input_ids, attention_mask = tokens["input_ids"], tokens["attention_mask"]
+                all_layers = roberta_model_new(
+                    input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states
+                pooling = torch.nn.AvgPool2d((input_ids.size(1), 1))
+                sentence_features = pooling(all_layers[layer])
             batch_features.append(sentence_features[0])            
     return batch_features
 
@@ -228,14 +231,15 @@ def statistical_segmentation(similarities, stdevs):
                 min_index = start + similarities[start:i].index(min(similarities[start:i]))
                 indices.append(min_index)
                 start = None
-    return indices
+    return indices, threshold
 
 
 def fix_indices(segments, window_size, segmenting_method):
     segments.sort()
+    additions = window_size
     if segmenting_method=="original_segmentation":
-        segments = [segment+2 for segment in segments]
-    return [segment+2*window_size for segment in segments]
+        additions += 1
+    return [segment+additions for segment in segments], additions
 
 
 def topic_segmentation(
@@ -246,7 +250,8 @@ def topic_segmentation(
     end_col_name: Optional[str] = "end",
     caption_col_name: Optional[str] = "caption",
     embedding_col_name: Optional[str] = "embedding",
-    verbose: Optional[bool] = False):
+    verbose: Optional[bool] = False,
+    return_plot: Optional[bool] = False):
     """
     Input:
         df: dataframe with meeting captions
@@ -263,13 +268,21 @@ def topic_segmentation(
             end_col_name,
             caption_col_name,
             embedding_col_name,
-            verbose=verbose)
+            verbose=verbose,
+            return_plot=return_plot)
     elif topic_segmentation_algorithm.ID == "random":
         return topic_segmentation_baselines.topic_segmentation_random(
             df, meeting_id_col_name, topic_segmentation_algorithm.RANDOM_THRESHOLD, verbose=verbose)
     elif topic_segmentation_algorithm.ID == "even":
         return topic_segmentation_baselines.topic_segmentation_even(
             df, meeting_id_col_name, topic_segmentation_algorithm.k, verbose=verbose)
+    elif topic_segmentation_algorithm.ID == "none":
+        return topic_segmentation_baselines.topic_segmentation_none(
+            df, meeting_id_col_name)
+    elif topic_segmentation_algorithm.ID == "lexical":
+        return topic_segmentation_baselines.topic_segmentation_lexical(
+            df, meeting_id_col_name, caption_col_name,
+            topic_segmentation_algorithm.SPLIT_VOCABULARY, verbose=verbose)
     else:
         raise NotImplementedError("Algorithm not implemented")
 
@@ -281,8 +294,9 @@ def topic_segmentation_bert(
     start_col_name: Optional[str] = "start",
     end_col_name: Optional[str] = "end",
     caption_col_name: Optional[str] = "caption",
-    embedding_col_name = "embedding",
-    verbose: bool = False):
+    embedding_col_name: Optional[str] = "embedding",
+    verbose: Optional[bool] = False,
+    return_plot: Optional[bool] = False):
 
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 
@@ -332,32 +346,43 @@ def topic_segmentation_bert(
                 topic_segmentation_configs=topic_segmentation_configs)
             
         elif textiling_hyperparameters.ID=="new_segmentation":  # new method is as described in paper
-            if verbose:
-                import matplotlib.pyplot as plt
-                plt.plot(block_comparison_score_timeseries)
-                plt.plot([
-                    np.mean(block_comparison_score_timeseries)]*
-                    len(block_comparison_score_timeseries))
-                plt.plot([
-                    np.mean(block_comparison_score_timeseries)-
-                    textiling_hyperparameters.STDEVS*np.std(block_comparison_score_timeseries)]*
-                    len(block_comparison_score_timeseries))
-                plt.xlabel('Sentence Index')
-                plt.ylabel('Similarity Score')
-                plt.show()
-            segments[meeting_id] = statistical_segmentation(
+
+            segments[meeting_id], threshold = statistical_segmentation(
                 block_comparison_score_timeseries, 
                 stdevs = textiling_hyperparameters.STDEVS)
-
+            
         else:
             raise NotImplementedError("TextTiling method not implemented")
             
-        segments[meeting_id] = fix_indices(
+        segments[meeting_id], additions = fix_indices(
             segments[meeting_id],
             topic_segmentation_configs.SENTENCE_COMPARISON_WINDOW,
             textiling_hyperparameters.ID)
         
         if verbose:
-            print(segments[meeting_id])
+            print(f'BERT segmentation: {segments[meeting_id]}')
+            import matplotlib.pyplot as plt
+            fig = plt.figure()
+            ax = fig.add_subplot(1,1,1)
+            indexes = np.arange(0,len(block_comparison_score_timeseries),1) + additions
+            plt.plot(indexes,block_comparison_score_timeseries)
+            #plt.plot(
+            #    indexes,
+            #    [np.mean(block_comparison_score_timeseries)]*
+            #    len(block_comparison_score_timeseries))
+            plt.plot(
+                indexes,
+                [threshold]*
+                len(block_comparison_score_timeseries))
+            for i in segments[meeting_id]:
+                plt.plot(i,block_comparison_score_timeseries[i-additions],'r*')
+            plt.xlabel('Sentence Index')
+            plt.ylabel('Similarity Score')
+            plt.legend(['Similarity Score', 'Threshold', 'Predicted Transition'])
+
+            if return_plot:
+                return segments, fig, ax
+            else:
+                plt.show()
 
     return segments
