@@ -218,6 +218,7 @@ def eval_topic_segmentation(
     input_df: Optional[pd.DataFrame] = None,
     col_names: Optional[tuple] = None,
     binary_label_encoding: Optional[bool] = False,
+    return_segmentation: Optional[bool] = False,
     verbose: Optional[bool] = False
 ) -> Dict[str, float]:
     
@@ -258,7 +259,10 @@ def eval_topic_segmentation(
         else:
             labels = recode_labels(input_df,meeting_id_col_name,label_col_name)
 
-        return compute_metrics(prediction_segmentations,labels,verbose=verbose)
+        if return_segmentation:
+            return compute_metrics(prediction_segmentations,labels,verbose=verbose), prediction_segmentations
+        else:
+            return compute_metrics(prediction_segmentations,labels,verbose=verbose)
     
     
 def multiple_eval(
