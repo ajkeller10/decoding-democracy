@@ -236,9 +236,9 @@ def statistical_segmentation(similarities, stdevs):
 
 def fix_indices(segments, window_size, segmenting_method):
     segments.sort()
-    additions = 2*window_size
+    additions = window_size
     if segmenting_method=="original_segmentation":
-        additions += 2
+        additions += 1
     return [segment+additions for segment in segments], additions
 
 

@@ -45,8 +45,8 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
         except ZeroDivisionError:
             _windiff.append(np.nan)  # TODO: replace with correct solution
 
-    avg_pk = sum(_pk) / len(binary_labels)
-    avg_windiff = sum(_windiff) / len(binary_labels)
+    avg_pk = np.nansum(_pk) / len(binary_labels)
+    avg_windiff = np.nansum(_windiff) / len(binary_labels)
 
     if verbose:
         print("Pk on {} meetings: {}".format(len(binary_labels), avg_pk))
