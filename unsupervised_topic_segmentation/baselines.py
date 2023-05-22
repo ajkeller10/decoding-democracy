@@ -50,7 +50,7 @@ def topic_segmentation_even(
 def topic_segmentation_none(
     df: pd.DataFrame,
     meeting_id_col_name: str):
-    """Returns single segment for each meeting.""""
+    """Returns single segment for each meeting."""
 
     return {id:[] for id in set(df[meeting_id_col_name])}
 
