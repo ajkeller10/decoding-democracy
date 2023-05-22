@@ -1,9 +1,9 @@
 # Decoding Democracy: Segmentation of City Council Transcripts
 
-This is the final project from @ajkeller10 and @olpinney for CAPP 30255 Advanced Machine Learning for Public Policy, in Spring 2023.
+This is the final project from [@ajkeller10](https://github.com/ajkeller10) and [@olpinney](https://github.com/olpinney) for CAPP 30255 Advanced Machine Learning for Public Policy, in Spring 2023.
 
 ## Project Intro / Objective
-Our project builds on the[Council Data Project](https://github.com/CouncilDataProject/cdp-roadmap/issues/9), an open-source product that makes local government meetings more accessible by automatically transcribing meeting recordings. Our project attempts to segment transcripts to improve usefulness –  an open to-do in Council Data Project’s backlog.
+Our project builds on the [Council Data Project](https://github.com/CouncilDataProject/cdp-roadmap/issues/9), an open-source product that makes local government meetings more accessible by automatically transcribing meeting recordings. Our project attempts to segment transcripts to improve usefulness –  an open to-do in Council Data Project’s backlog.
 
 ### Prior work utilized 
 #### Unsupervised Topic Segmentation of Meetings with BERT Embeddings
@@ -49,7 +49,7 @@ Our project builds on the[Council Data Project](https://github.com/CouncilDataPr
 - [link to local methods](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py)
 
 
-![*TextTiling Results on Manually Labeled Transcript*](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.JPG)
+![TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
 
 ### Hyperparameter tuning:
 - We needed a proxy task to tune hyperparameters k and j and evaluate performance for unlabeled transcripts
@@ -97,14 +97,14 @@ For AMI meeting transcript data, segmenting randomly concatenated documents does
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
-![*AMI Meeting Corpus Performance*](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
+![AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
 
 Concatenated topic segmentation suggests window k=70 and threshold j=1 to balance Pk and WinDiff, but this is suboptimal for true segmentation task.
 
 ### Takeaway 2: 
 TextTiling with transformers is anecdotally successful at segmenting council transcripts; however, hyperparameter tuning and performance evaluation require manually-labeled data.
 
-![*Manually Labeled Council Transcript Performance*](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
+![Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
 
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
