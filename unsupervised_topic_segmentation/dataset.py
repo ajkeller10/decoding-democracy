@@ -10,6 +10,7 @@ FILLERS = ["um", "uh", "oh", "hmm", "mm-hmm", "uh-uh", "you know"]
 
 
 def add_durations(df,caption_col_name="caption"):
+    """Adds 'duration' column and start/end times based on caption length."""
     df['duration'] = df[caption_col_name].apply(lambda x: len(x.split(' ')))  # 1 word/s
     df['end_time'] = df.duration.cumsum()
     df['start_time'] = df.duration.cumsum() - df.duration
@@ -38,6 +39,7 @@ def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_l
 
     return df
 
+### The below functions were unimplemented from Solbiati et al
 
 def icsi_dataset():
     """This data was mostly parsed from the NTX tool, read more googling ICSI Meeting Corpus

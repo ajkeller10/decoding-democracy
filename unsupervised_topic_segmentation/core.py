@@ -27,7 +27,7 @@ def depth_score(timeseries):
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
     given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley.
 
-    returns depth_scores
+    (Only used in Solbiati et al's OriginalSegmentation)
     """
     depth_scores = []
     for i in range(1, len(timeseries) - 1):
@@ -45,6 +45,7 @@ def depth_score(timeseries):
 
 
 def smooth(timeseries, n, s):
+    """Smooths time series. Only used in Solbiati et al's OriginalSegmentation."""
     smoothed_timeseries = timeseries[:]
     for _ in range(n):
         for index in range(len(smoothed_timeseries)):
@@ -57,14 +58,14 @@ def smooth(timeseries, n, s):
 
 def sentences_similarity(first_sentence_features, second_sentence_features) -> float:
     """
-    Given two senteneces embedding features compute cosine similarity
+    Given two senteneces embedding features compute cosine similarity. 
     """
     similarity_metric = torch.nn.CosineSimilarity()
     return float(similarity_metric(first_sentence_features, second_sentence_features))
 
 
 def compute_window(timeseries, start_index, end_index):
-    """given start and end index of embedding, compute pooled window value
+    """Given start and end index of embedding, compute pooled window value.
 
     [window_size, 768] -> [1, 768]
     """
@@ -104,7 +105,7 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
     returns a 1-dimensional tensor of size 758 [old] or 768 [new]
     """
     batch_features = []
-    if old_version:  # original code - old version of transformers, unclear which one
+    if old_version:  # Solbiati et al's code - old version of transformers, unclear which one
         for sentence in batch_sentences:
             tokens = roberta_model.encode(sentence)
             all_layers = roberta_model.extract_features(tokens, return_all_hiddens=True)
@@ -134,6 +135,7 @@ def arsort2(array1, array2):
 
 
 def get_local_maxima(array):
+    """Gets ALL local maxima of an array. Only used in Solbiati et al's OriginalSegmentation."""
     local_maxima_indices = []
     local_maxima_values = []
     for i in range(1, len(array) - 1):
@@ -150,6 +152,8 @@ def depth_score_to_topic_change_indexes(
 ):
     """
     capped add a max segment limit so there are not too many segments, used for UI improvements on the Workplace TeamWork product
+
+    Only used in Solbiati et al's OriginalSegmentation.
     """
 
     capped = topic_segmentation_configs.TEXT_TILING.MAX_SEGMENTS_CAP
@@ -223,9 +227,11 @@ def split_list(a, n):
 
 
 def statistical_segmentation(similarities, stdevs):
+    """Core method for NewSegmentation - finds local minima below a statistical threshold."""
     indices = []
     start = None
     threshold = np.mean(similarities)-(np.std(similarities)*stdevs)
+    # specifically, get minimum of each sequence of consecutive scores below the threshold
     for i, value in enumerate(similarities):
         if value < threshold:
             if start is None:
@@ -239,6 +245,10 @@ def statistical_segmentation(similarities, stdevs):
 
 
 def fix_indices(segments, window_size, segmenting_method):
+    """Original code incorrectly returned indices relative to original indexing. 
+    
+    This fixes that.
+    """
     segments.sort()
     additions = window_size
     if segmenting_method=="original_segmentation":
@@ -257,10 +267,7 @@ def topic_segmentation(
     verbose: Optional[bool] = False,
     return_plot: Optional[bool] = False):
     """
-    Input:
-        df: dataframe with meeting captions
-    Output:
-        {meeting_id: [list of topic change indexes]}
+    Core segmentation method wrapping any algorithm.
     """
 
     if topic_segmentation_algorithm.ID == "bert":
@@ -301,6 +308,7 @@ def topic_segmentation_bert(
     embedding_col_name: Optional[str] = "embedding",
     verbose: Optional[bool] = False,
     return_plot: Optional[bool] = False):
+    """Core segmentation method for TextTiling with embeddings."""
 
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 

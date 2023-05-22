@@ -14,6 +14,7 @@ def topic_segmentation_random(
     meeting_id_col_name: str,
     random_threshold: float = 0.9,
     verbose: bool = False):
+    """Randomly segment meeting via Bernoulli draw with specified threshold."""
 
     segments = {}
     for meeting_id in set(df[meeting_id_col_name]):
@@ -32,6 +33,7 @@ def topic_segmentation_even(
     meeting_id_col_name: str,
     k: int,
     verbose: bool = False):
+    """Evenly segment meeting into segments of length k."""
 
     segments = {}
     for meeting_id in set(df[meeting_id_col_name]):
@@ -48,6 +50,7 @@ def topic_segmentation_even(
 def topic_segmentation_none(
     df: pd.DataFrame,
     meeting_id_col_name: str):
+    """Returns single segment for each meeting.""""
 
     return {id:[] for id in set(df[meeting_id_col_name])}
 
@@ -58,6 +61,7 @@ def topic_segmentation_lexical(
     caption_col_name: str = 'caption',
     split_vocabulary=SPLIT_VOCAB,
     verbose: bool = False):
+    """Segment meeting based on caption content, splitting on words in split vocabulary."""
     
     segments = {}
     for meeting_id in set(df[meeting_id_col_name]):

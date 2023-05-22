@@ -22,6 +22,7 @@ LABEL_COL_NAME = "label"
 
 
 def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix="", verbose=False):
+    """Computes average Pk and WinDiff across all meetings."""
     _pk, _windiff = [], []
     for meeting_id, reference_segmentation in binary_labels.items():
 
@@ -36,14 +37,14 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
 
         try:
             _pk.append(pk(reference_segmentation, predicted_segmentation))
-        except ZeroDivisionError:
+        except ZeroDivisionError:  # iff true segmentation is only one segment
             _pk.append(np.nan)  # TODO: replace with correct solution
 
         # setting k to default value used in CoAP (pk) function for both evaluation functions
         try:
             k = int(round(len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)))
             _windiff.append(windowdiff(reference_segmentation, predicted_segmentation, k))
-        except ZeroDivisionError:
+        except ZeroDivisionError:  # iff true segmentation is only one segment
             _windiff.append(np.nan)  # TODO: replace with correct solution
 
     avg_pk = np.nansum(_pk) / len(binary_labels)
@@ -67,6 +68,8 @@ def binary_labels_flattened(
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure flattened.
     see https://www.XXXX.com/intern/anp/view/?id=434543
+
+    Only used in original eval method.
     """
     labels_flattened = {}
     meeting_ids = list(set(input_df[meeting_id_col_name]))
@@ -120,6 +123,8 @@ def binary_labels_top_level(
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure only top level topics
     see https://www.XXXX.com/intern/anp/view/?id=434543
+
+    Only used in original eval method.
     """
     labels_top_level = {}
     meeting_ids = list(set(input_df[meeting_id_col_name]))
@@ -184,6 +189,7 @@ def binary_labels_top_level(
 
 def recode_labels(input_df,meeting_id_col_name,label_col_name):
     """
+    New function that recodes from 1/2/3 to 0/1.
     Dictionary of meeting_id: reference_segmentation where latter is
     0/1 binary for transition sentences - for example, recode [1,1,2,2,2,3] to [0,0,1,0,0,0,1]
     """
@@ -216,6 +222,7 @@ def eval_topic_segmentation(
     binary_label_encoding: Optional[bool] = False,
     return_segmentation: Optional[bool] = False,
     verbose: Optional[bool] = False) -> Dict[str, float]:
+    """Core eval function."""
     
     if dataset_name is not None:
         if dataset_name == TopicSegmentationDatasets.AMI:
@@ -273,10 +280,9 @@ def eval_topic_segmentation(
     
 
 def multiple_eval(
-        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False,embeddings=False):
-
-    #test_transcripts = []
-    #segmentations = []
+        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,
+        verbose=False,embeddings=False):
+    """Metrics over multiple evaluation iterations."""
 
     n_captions = []
     n_segments = []
@@ -304,6 +310,7 @@ def multiple_eval(
             eval_topic_segmentation(
                 topic_segmentation_algorithm=random_algorithm,input_df=test_data,verbose=verbose)])
         
+    # parse output
     flattened_list = [{f'dict{i+1}_{k}': v for i, d in enumerate(trial) for k, v in d.items()} for trial in metrics]
     output = pd.DataFrame(flattened_list)
     output.columns = ['test_pk','test_windiff','even_pk','even_windiff','random_pk','random_windiff']
