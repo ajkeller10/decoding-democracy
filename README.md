@@ -33,8 +33,8 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 - use of Spark is optional - embedding can be done [locally](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py) but will slow down code dramatically
 
 ### Main analysis files
-- [explination of methods and exploration of manually labeled transcript data](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
-- [evaluating random concatination proxy task on AMI corpus](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
+- [explanation of methods and exploration of manually labeled transcript data](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
+- [evaluating random concatenation proxy task on AMI corpus](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
 
 ## Approach
@@ -87,7 +87,7 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 - [code for data cleaning pre- and post-Spark](https://github.com/ajkeller10/decoding-democracy/blob/main/data_cleaning.ipynb)
 - [code for data embedding in Spark](https://github.com/ajkeller10/decoding-democracy/blob/main/spark_roberta_pipeline.ipynb)
 - embedded data is 190MB and cannot be stored on github. Please contact for copy of "decoding-democracy/data/transcripts_with_embeds.pickle"
-- [code for generating random concatinated transcripts](https://github.com/ajkeller10/decoding-democracy/blob/main/create_test_data.py)
+- [code for generating random concatenated transcripts](https://github.com/ajkeller10/decoding-democracy/blob/main/create_test_data.py)
 
 ## Results
 ### Takeaway 1: 
