@@ -1,12 +1,19 @@
+"""Preprocessing functions (loading functions unused)."""
+
+
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
+from typing import Optional
 
 
 FILLERS = ["um", "uh", "oh", "hmm", "mm-hmm", "uh-uh", "you know"]
 
 
-def add_durations(df,caption_col_name="caption"):
+def add_durations(
+        df: pd.DataFrame,
+        caption_col_name: Optional[str] = "caption") -> pd.DataFrame:
+    """Adds 'duration' column and start/end times based on caption length."""
     df['duration'] = df[caption_col_name].apply(lambda x: len(x.split(' ')))  # 1 word/s
     df['end_time'] = df.duration.cumsum()
     df['start_time'] = df.duration.cumsum() - df.duration
@@ -14,7 +21,12 @@ def add_durations(df,caption_col_name="caption"):
     return df
 
 
-def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_len=20, divide_multi_sentence=False):
+def preprocessing(
+        df: pd.DataFrame, 
+        caption_col_name: Optional[str] = "caption", 
+        fillers: Optional[list[str]] = FILLERS, 
+        min_caption_len: Optional[int] = 20, 
+        divide_multi_sentence: Optional[bool] = False):
     """Strips filler words and deletes sentences with 20 characters or less."""
     fillers += list(
         map(lambda filler: filler + " ", fillers)
@@ -26,7 +38,7 @@ def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_l
     df[caption_col_name].replace('<([^<>]+)>', "", regex=True, inplace=True)
 
     if divide_multi_sentence:
-        # divide up multi-sentence captions into new rows
+        # divide up multi-sentence captions into new rows. but might split after acronyms like D.A.R.E.!
         df[caption_col_name] = df[caption_col_name].str.split(". ")
         df = df.explode(caption_col_name)
 
@@ -35,6 +47,8 @@ def preprocessing(df, caption_col_name="caption", fillers=FILLERS, min_caption_l
 
     return df
 
+
+### The below functions were unimplemented from Solbiati et al
 
 def icsi_dataset():
     """This data was mostly parsed from the NTX tool, read more googling ICSI Meeting Corpus

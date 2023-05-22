@@ -1,9 +1,12 @@
+"""TextTiling with BERT embeddings algorithm implementation."""
+
+
 import numpy as np
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 import torch
 from . import baselines as topic_segmentation_baselines
-from .types import TopicSegmentationAlgorithm, BERTSegmentation
+from .types import TopicSegmentationAlgorithm, BERTSegmentation, TextTilingHyperparameters
 from transformers import RobertaConfig, RobertaModel, AutoTokenizer, AutoModel
 from typing import Optional
 
@@ -19,12 +22,12 @@ PARALLEL_INFERENCE_INSTANCES = 20
 DISPLAY_SIMILARITIES = False
 
 
-def depth_score(timeseries):
+def depth_score(timeseries: list[float])-> list[float]:
     """
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
     given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley.
 
-    returns depth_scores
+    (Only used in Solbiati et al's OriginalSegmentation)
     """
     depth_scores = []
     for i in range(1, len(timeseries) - 1):
@@ -41,7 +44,11 @@ def depth_score(timeseries):
     return depth_scores
 
 
-def smooth(timeseries, n, s):
+def smooth(
+        timeseries: list[float],
+        n: int,
+        s: int) -> list[float]:
+    """Smooths time series. Only used in Solbiati et al's OriginalSegmentation."""
     smoothed_timeseries = timeseries[:]
     for _ in range(n):
         for index in range(len(smoothed_timeseries)):
@@ -52,16 +59,21 @@ def smooth(timeseries, n, s):
     return smoothed_timeseries
 
 
-def sentences_similarity(first_sentence_features, second_sentence_features) -> float:
+def sentences_similarity(
+        first_sentence_features: torch.Tensor, 
+        second_sentence_features: torch.Tensor) -> float:
     """
-    Given two senteneces embedding features compute cosine similarity
+    Given two embedding features compute cosine similarity. 
     """
     similarity_metric = torch.nn.CosineSimilarity()
     return float(similarity_metric(first_sentence_features, second_sentence_features))
 
 
-def compute_window(timeseries, start_index, end_index):
-    """given start and end index of embedding, compute pooled window value
+def compute_window(
+        timeseries: list[float],
+        start_index: int,
+        end_index: int):
+    """Given start and end index of embedding, compute pooled window value.
 
     [window_size, 768] -> [1, 768]
     """
@@ -75,7 +87,9 @@ def compute_window(timeseries, start_index, end_index):
         return pooling(stack)
 
 
-def block_comparison_score(timeseries, k):
+def block_comparison_score(
+        timeseries: list[float],
+        k: int)-> list[float]:
     """
     comparison score for a gap (i)
 
@@ -92,7 +106,10 @@ def block_comparison_score(timeseries, k):
     return res
 
 
-def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
+def get_features_from_sentence(
+        batch_sentences: list[str],
+        layer: Optional[int] = -2,
+        old_version: Optional[bool] = False) -> list[torch.Tensor]:
     """
     extracts the BERT semantic representation
     from a sentence, using an averaged value of
@@ -101,7 +118,7 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
     returns a 1-dimensional tensor of size 758 [old] or 768 [new]
     """
     batch_features = []
-    if old_version:  # original code - old version of transformers, unclear which one
+    if old_version:  # Solbiati et al's code - old version of transformers, unclear which one
         for sentence in batch_sentences:
             tokens = roberta_model.encode(sentence)
             all_layers = roberta_model.extract_features(tokens, return_all_hiddens=True)
@@ -112,16 +129,18 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
         for sentence in batch_sentences:
             with torch.no_grad():
                 tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
+                # attention mask usually just all ones
                 input_ids, attention_mask = tokens["input_ids"], tokens["attention_mask"]
                 all_layers = roberta_model_new(
-                    input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states
+                    input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states  # 13 layers
                 pooling = torch.nn.AvgPool2d((input_ids.size(1), 1))
-                sentence_features = pooling(all_layers[layer])
+                sentence_features = pooling(all_layers[layer])  # 1 x n_tokens x 768
             batch_features.append(sentence_features[0])            
     return batch_features
 
 
 def arsort2(array1, array2):
+    """Helper function for Solbiati et al's OriginalSegmentation."""
     x = np.array(array1)
     y = np.array(array2)
 
@@ -130,6 +149,7 @@ def arsort2(array1, array2):
 
 
 def get_local_maxima(array):
+    """Gets ALL local maxima of an array. Only used in Solbiati et al's OriginalSegmentation."""
     local_maxima_indices = []
     local_maxima_values = []
     for i in range(1, len(array) - 1):
@@ -140,12 +160,14 @@ def get_local_maxima(array):
 
 
 def depth_score_to_topic_change_indexes(
-    depth_score_timeseries,
-    meeting_duration,
-    topic_segmentation_configs
-):
+    depth_score_timeseries: list[float],
+    meeting_duration: int,
+    topic_segmentation_configs: TextTilingHyperparameters
+    )-> list[int]:
     """
     capped add a max segment limit so there are not too many segments, used for UI improvements on the Workplace TeamWork product
+
+    Only used in Solbiati et al's OriginalSegmentation.
     """
 
     capped = topic_segmentation_configs.TEXT_TILING.MAX_SEGMENTS_CAP
@@ -197,7 +219,7 @@ def depth_score_to_topic_change_indexes(
     return local_maxima_indices
 
 
-def get_timeseries(caption_indexes, features):
+def get_timeseries(caption_indexes,features):
     timeseries = []
     for caption_index in caption_indexes:
         timeseries.append(features[caption_index])
@@ -218,10 +240,14 @@ def split_list(a, n):
         for i in range(min(len(a), n)))
 
 
-def statistical_segmentation(similarities, stdevs):
+def statistical_segmentation(
+        similarities: list[float],
+        stdevs: int) -> tuple[list[int], float]:
+    """Core method for NewSegmentation - finds local minima below a statistical threshold."""
     indices = []
     start = None
     threshold = np.mean(similarities)-(np.std(similarities)*stdevs)
+    # specifically, get minimum of each sequence of consecutive scores below the threshold
     for i, value in enumerate(similarities):
         if value < threshold:
             if start is None:
@@ -234,7 +260,14 @@ def statistical_segmentation(similarities, stdevs):
     return indices, threshold
 
 
-def fix_indices(segments, window_size, segmenting_method):
+def fix_indices(
+        segments: list[float],
+        window_size: int,
+        segmenting_method: str) -> tuple[list[float], int]:
+    """Original code incorrectly returned indices relative to original indexing. 
+    
+    This fixes that.
+    """
     segments.sort()
     additions = window_size
     if segmenting_method=="original_segmentation":
@@ -253,10 +286,7 @@ def topic_segmentation(
     verbose: Optional[bool] = False,
     return_plot: Optional[bool] = False):
     """
-    Input:
-        df: dataframe with meeting captions
-    Output:
-        {meeting_id: [list of topic change indexes]}
+    Core segmentation method wrapping any algorithm.
     """
 
     if topic_segmentation_algorithm.ID == "bert":
@@ -297,6 +327,7 @@ def topic_segmentation_bert(
     embedding_col_name: Optional[str] = "embedding",
     verbose: Optional[bool] = False,
     return_plot: Optional[bool] = False):
+    """Core segmentation method for TextTiling with embeddings."""
 
     textiling_hyperparameters = topic_segmentation_configs.TEXT_TILING
 

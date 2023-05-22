@@ -1,3 +1,6 @@
+"""Functions for evaluation of topic segmentation performance."""
+
+
 import logging
 from bisect import bisect
 from typing import Dict, Optional
@@ -18,9 +21,12 @@ CAPTION_COL_NAME = "caption"
 LABEL_COL_NAME = "label"
 
 
-def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix="", verbose=False):
-    #print(prediction_segmentations)
-    #print(binary_labels)
+def compute_metrics(
+        prediction_segmentations: dict[str,list], 
+        binary_labels: dict[str,list], 
+        metric_name_suffix: Optional[str] = "", 
+        verbose: Optional[bool] = False) -> dict[str,float]:
+    """Computes average Pk and WinDiff across all meetings."""
     _pk, _windiff = [], []
     for meeting_id, reference_segmentation in binary_labels.items():
 
@@ -35,14 +41,14 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
 
         try:
             _pk.append(pk(reference_segmentation, predicted_segmentation))
-        except ZeroDivisionError:
+        except ZeroDivisionError:  # iff true segmentation is only one segment
             _pk.append(np.nan)  # TODO: replace with correct solution
 
         # setting k to default value used in CoAP (pk) function for both evaluation functions
         try:
             k = int(round(len(reference_segmentation) / (reference_segmentation.count("1") * 2.0)))
             _windiff.append(windowdiff(reference_segmentation, predicted_segmentation, k))
-        except ZeroDivisionError:
+        except ZeroDivisionError:  # iff true segmentation is only one segment
             _windiff.append(np.nan)  # TODO: replace with correct solution
 
     avg_pk = np.nansum(_pk) / len(binary_labels)
@@ -54,8 +60,7 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
 
     return {
         "average_Pk_" + str(metric_name_suffix): avg_pk,
-        "average_windiff_" + str(metric_name_suffix): avg_windiff,
-    }
+        "average_windiff_" + str(metric_name_suffix): avg_windiff}
 
 
 def binary_labels_flattened(
@@ -67,6 +72,8 @@ def binary_labels_flattened(
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure flattened.
     see https://www.XXXX.com/intern/anp/view/?id=434543
+
+    Only used in original eval method.
     """
     labels_flattened = {}
     meeting_ids = list(set(input_df[meeting_id_col_name]))
@@ -85,8 +92,7 @@ def binary_labels_flattened(
 
         caption_start_times = list(meeting_data[start_col_name])
         segment_start_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name])
 
         meeting_labels_flattened = [0] * len(caption_start_times)
 
@@ -121,6 +127,8 @@ def binary_labels_top_level(
     Binary Label [0, 0, 1, 0] for topic changes as ntlk format.
     Hierarchical topic strutcure only top level topics
     see https://www.XXXX.com/intern/anp/view/?id=434543
+
+    Only used in original eval method.
     """
     labels_top_level = {}
     meeting_ids = list(set(input_df[meeting_id_col_name]))
@@ -139,11 +147,9 @@ def binary_labels_top_level(
 
         caption_start_times = list(meeting_data[start_col_name])
         segment_start_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name])
         segment_end_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][end_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][end_col_name])
 
         meeting_labels_top_level = [0] * len(caption_start_times)
 
@@ -157,14 +163,12 @@ def binary_labels_top_level(
                 i = (
                     segment_end_times.index(end)
                     + segment_end_times[segment_end_times.index(end) + 1 :].index(end)
-                    + 2
-                )
+                    + 2)
             else:
                 i += 1
 
         segment_start_times_high_level = [
-            segment_start_times[i] for i in high_level_topics_indexes
-        ]
+            segment_start_times[i] for i in high_level_topics_indexes]
 
         # we skip first and last labaled segment cause they are naive segments
         for sst in segment_start_times_high_level[1:]:
@@ -187,8 +191,12 @@ def binary_labels_top_level(
     return labels_top_level
 
 
-def recode_labels(input_df,meeting_id_col_name,label_col_name):
+def recode_labels(
+        input_df: pd.DataFrame,
+        meeting_id_col_name: str,
+        label_col_name: str) -> pd.DataFrame:
     """
+    New function that recodes from 1/2/3 to 0/1.
     Dictionary of meeting_id: reference_segmentation where latter is
     0/1 binary for transition sentences - for example, recode [1,1,2,2,2,3] to [0,0,1,0,0,0,1]
     """
@@ -220,10 +228,10 @@ def eval_topic_segmentation(
     col_names: Optional[tuple] = None,
     binary_label_encoding: Optional[bool] = False,
     return_segmentation: Optional[bool] = False,
-    verbose: Optional[bool] = False
-) -> Dict[str, float]:
+    verbose: Optional[bool] = False) -> dict[str, float]:
+    """Core eval function."""
     
-    if dataset_name is not None:
+    if dataset_name is not None:  # only used in original eval approach
         if dataset_name == TopicSegmentationDatasets.AMI:
             input_df, label_df = ami_dataset()
         elif dataset_name == TopicSegmentationDatasets.ICSI:
@@ -277,11 +285,16 @@ def eval_topic_segmentation(
         else:
             return compute_metrics(prediction_segmentations,labels,verbose=verbose)
     
-def multiple_eval(
-        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False,embeddings=False):
 
-    #test_transcripts = []
-    #segmentations = []
+def multiple_eval(
+        data_function: function,
+        iterations: int,
+        test_algorithm: TopicSegmentationAlgorithm,
+        even_algorithm: TopicSegmentationAlgorithm,
+        random_algorithm: TopicSegmentationAlgorithm,
+        verbose: Optional[bool] = False,
+        embeddings: Optional[bool] = False) -> pd.DataFrame:
+    """Metrics over multiple evaluation iterations."""
 
     n_captions = []
     n_segments = []
@@ -293,12 +306,12 @@ def multiple_eval(
             results,embedding,labels,topics,doc_count = data_function(embeddings=embeddings)
         else:
             results,labels,topics,doc_count = data_function(embeddings=embeddings)
-            embedding = None
         n_captions.append(len(results))
         n_segments.append(doc_count)
-        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1,'embedding':embedding})
+        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1})
+        if embeddings:
+            test_data['embedding'] = embedding
         test_data = add_durations(test_data)
-        test_data = test_data[['meeting_id','start_time','end_time','caption','label','embedding']]
         test_data = preprocessing(test_data, 'caption')
 
         metrics.append(
@@ -309,6 +322,7 @@ def multiple_eval(
             eval_topic_segmentation(
                 topic_segmentation_algorithm=random_algorithm,input_df=test_data,verbose=verbose)])
         
+    # parse output
     flattened_list = [{f'dict{i+1}_{k}': v for i, d in enumerate(trial) for k, v in d.items()} for trial in metrics]
     output = pd.DataFrame(flattened_list)
     output.columns = ['test_pk','test_windiff','even_pk','even_windiff','random_pk','random_windiff']

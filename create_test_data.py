@@ -120,7 +120,10 @@ def generate_segment(
     else:
         topics = None
 
-    return results, embedding, labels, topics, doc_count
+    if embeddings:
+        return results, embedding, labels, topics, doc_count
+    else:
+        return results, labels, topics, doc_count
 
 
 def clean_topic_json(topic_json,transcript_id,fillers):
