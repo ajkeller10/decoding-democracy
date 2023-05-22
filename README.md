@@ -47,27 +47,8 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 #### Links
 - [link to Spark embeddings](https://github.com/ajkeller10/decoding-democracy/blob/main/data_cleaning.ipynb)
 - [link to local methods](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py)
-
-
-
-GitHubQuick Tips
-3 Ways to Add an Image to GitHub README
-Images often come in handy alongside documentation. Here are a few methods for adding them to your README and other markdown files.
-
-
-Images can be a great way to enhance your documentation in README files or other markdown documentation. While there is a standard way to add an image in markdown, the nuance is in the image's source. Here are three methods for adding images to markdown files in a GitHub repository.
-
-Markdown Syntax
-The original documentation specifies that images should be written like so:
-
-<img
-  src="[/path/to/img.jpg](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.jpg)"
-  alt="Alt text"
-  title="Optional title"
-  style="display: inline-block; margin: 0 auto; max-width: 300px">
   
-  
-![TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
+![Table 1: TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
 
 ### Hyperparameter tuning:
 - We needed a proxy task to tune hyperparameters k and j and evaluate performance for unlabeled transcripts
@@ -115,14 +96,14 @@ For AMI meeting transcript data, segmenting randomly concatenated documents does
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
-![AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
+![Table 2: AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
 
 Concatenated topic segmentation suggests window k=70 and threshold j=1 to balance Pk and WinDiff, but this is suboptimal for true segmentation task.
 
 ### Takeaway 2: 
 TextTiling with transformers is anecdotally successful at segmenting council transcripts; however, hyperparameter tuning and performance evaluation require manually-labeled data.
 
-![Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
+![Table 3: Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
 
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
