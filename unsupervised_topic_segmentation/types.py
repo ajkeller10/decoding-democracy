@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+"""Defines types used to specify topic segmentation algorithms and hyperparameters."""
+
 
 from enum import Enum
 from typing import NamedTuple, Optional

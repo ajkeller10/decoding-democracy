@@ -1,3 +1,6 @@
+"""Functions for evaluation of topic segmentation performance."""
+
+
 import logging
 from bisect import bisect
 from typing import Dict, Optional
@@ -19,8 +22,6 @@ LABEL_COL_NAME = "label"
 
 
 def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix="", verbose=False):
-    #print(prediction_segmentations)
-    #print(binary_labels)
     _pk, _windiff = [], []
     for meeting_id, reference_segmentation in binary_labels.items():
 
@@ -54,8 +55,7 @@ def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix=
 
     return {
         "average_Pk_" + str(metric_name_suffix): avg_pk,
-        "average_windiff_" + str(metric_name_suffix): avg_windiff,
-    }
+        "average_windiff_" + str(metric_name_suffix): avg_windiff}
 
 
 def binary_labels_flattened(
@@ -85,8 +85,7 @@ def binary_labels_flattened(
 
         caption_start_times = list(meeting_data[start_col_name])
         segment_start_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name])
 
         meeting_labels_flattened = [0] * len(caption_start_times)
 
@@ -139,11 +138,9 @@ def binary_labels_top_level(
 
         caption_start_times = list(meeting_data[start_col_name])
         segment_start_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][start_col_name])
         segment_end_times = list(
-            labels_df[labels_df[meeting_id_col_name] == meeting_id][end_col_name]
-        )
+            labels_df[labels_df[meeting_id_col_name] == meeting_id][end_col_name])
 
         meeting_labels_top_level = [0] * len(caption_start_times)
 
@@ -157,14 +154,12 @@ def binary_labels_top_level(
                 i = (
                     segment_end_times.index(end)
                     + segment_end_times[segment_end_times.index(end) + 1 :].index(end)
-                    + 2
-                )
+                    + 2)
             else:
                 i += 1
 
         segment_start_times_high_level = [
-            segment_start_times[i] for i in high_level_topics_indexes
-        ]
+            segment_start_times[i] for i in high_level_topics_indexes]
 
         # we skip first and last labaled segment cause they are naive segments
         for sst in segment_start_times_high_level[1:]:
@@ -220,8 +215,7 @@ def eval_topic_segmentation(
     col_names: Optional[tuple] = None,
     binary_label_encoding: Optional[bool] = False,
     return_segmentation: Optional[bool] = False,
-    verbose: Optional[bool] = False
-) -> Dict[str, float]:
+    verbose: Optional[bool] = False) -> Dict[str, float]:
     
     if dataset_name is not None:
         if dataset_name == TopicSegmentationDatasets.AMI:
@@ -277,6 +271,7 @@ def eval_topic_segmentation(
         else:
             return compute_metrics(prediction_segmentations,labels,verbose=verbose)
     
+
 def multiple_eval(
         data_function,iterations,test_algorithm,even_algorithm,random_algorithm,verbose=False,embeddings=False):
 
