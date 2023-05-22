@@ -112,11 +112,12 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
         for sentence in batch_sentences:
             with torch.no_grad():
                 tokens = tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
+                # attention mask usually just all ones
                 input_ids, attention_mask = tokens["input_ids"], tokens["attention_mask"]
                 all_layers = roberta_model_new(
-                    input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states
+                    input_ids, attention_mask=attention_mask, output_hidden_states=True).hidden_states  # 13 layers
                 pooling = torch.nn.AvgPool2d((input_ids.size(1), 1))
-                sentence_features = pooling(all_layers[layer])
+                sentence_features = pooling(all_layers[layer])  # 1 x n_tokens x 768
             batch_features.append(sentence_features[0])            
     return batch_features
 

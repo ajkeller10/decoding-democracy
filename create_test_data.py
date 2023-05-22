@@ -191,7 +191,10 @@ def generate_segment(
     else:
         topics = None
 
-    return results, embedding, labels, topics, doc_count
+    if embeddings:
+        return results, embedding, labels, topics, doc_count
+    else:
+        return results, labels, topics, doc_count
 
 def try_create_test_data():
     t=transcript_pickle_to_df()

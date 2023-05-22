@@ -293,12 +293,12 @@ def multiple_eval(
             results,embedding,labels,topics,doc_count = data_function(embeddings=embeddings)
         else:
             results,labels,topics,doc_count = data_function(embeddings=embeddings)
-            embedding = None
         n_captions.append(len(results))
         n_segments.append(doc_count)
-        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1,'embedding':embedding})
+        test_data = pd.DataFrame(data={'caption':results,'label':labels,'meeting_id':1})
+        if embeddings:
+            test_data['embedding'] = embedding
         test_data = add_durations(test_data)
-        test_data = test_data[['meeting_id','start_time','end_time','caption','label','embedding']]
         test_data = preprocessing(test_data, 'caption')
 
         metrics.append(
