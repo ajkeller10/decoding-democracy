@@ -87,14 +87,14 @@ def clean_topic_json(topic_json,transcript_id,fillers):
 
 
 def generate_segment(
-        t : pd.DataFrame = transcript_pickle_to_df(),
-        doc_count_limit: int = 10, sentence_min: int = 20, labeled: bool = False, embeddings = False) -> tuple: 
+        t : pd.DataFrame = transcript_pickle_to_df(), doc_count_min:int =1,
+        doc_count_max: int = 10, sentence_min: int = 20, labeled: bool = False, embeddings = False) -> tuple: 
     '''
-    Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_limit documents
+    Generate testing transcript from transcript data, where output resembles a transcript but incorporates segments from 1:doc_count_max documents
 
     Output is representative of transcripts in the following ways: 
-    - Sample of transcripts is filtered to documents of sufficient length (>=doc_count_limit*sentence_min)
-        - For this reason, doc_count_limit<= 10 and sentence_min<= 50 are recommended
+    - Sample of transcripts is filtered to documents of sufficient length (>=doc_count_max*sentence_min)
+        - For this reason, doc_count_max<= 10 and sentence_min<= 50 are recommended
     - Documents used in output are randomly selected from remaining sample
     - Output length is drawn from sample distribution of remaining document lengths 
     - Output starts with text from the start of a document, and ends with text from the end of a document
@@ -110,13 +110,13 @@ def generate_segment(
         t: transcripts as rows in df, containing columns: 
             'sentences': list of sentences in transcript
             'topic_counts': list of distinct topic per sentence in transcript (only needed if labeled) 
-        doc_count_limit: maximum number of documents to pull from. Actual number in range of 1:doc_count_limit
+        doc_count_max: maximum number of documents to pull from. Actual number in range of 1:doc_count_max
         sentence_min: minimum number of sentences per document selected
         labeled: has labeled topic codings
     
     Returns:
         segment (list): List of sentences
-        labels (list): Count of distinct document each sentence was pulled from. Range of 1:doc_count_limit   
+        labels (list): Count of distinct document each sentence was pulled from. Range of 1:doc_count_max   
         topics (list): Count of distinct topic associated with each sentence. None if not labeled. 
         doc_count (int): Count of documents in segment
 
@@ -127,10 +127,10 @@ def generate_segment(
     
     #filter text for sufficiently long texts 
     t['length']=t['sentences'].apply(lambda x: len(x)) 
-    t_long=t[t['length']>=(doc_count_limit*sentence_min)]
+    t_long=t[t['length']>=(doc_count_max*sentence_min)]
 
     #count of documents
-    doc_count = random.randint(1,doc_count_limit)
+    doc_count = random.randint(doc_count_min,doc_count_max)
 
     #pull documents based on document count
     text = t_long.sample(doc_count)
@@ -170,13 +170,18 @@ def generate_segment(
        
     #get sentences
     text['results']=text.apply(lambda x: x['sentences'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
+    text['labels']=text.apply(lambda x: [x['index']] * x['sentences_to_use'],axis=1)
     if embeddings:
         text['embedding']=text.apply(lambda x: x['embedding'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
     text['labels']=text.apply(lambda x: [x['index']] * x['sentences_to_use'],axis=1)
+    
     results = list(itertools.chain.from_iterable(text['results']))
+    labels = list(itertools.chain.from_iterable(text['labels']))
+    
     if embeddings:
         embedding = list(itertools.chain.from_iterable(text['embedding']))
-    labels = list(itertools.chain.from_iterable(text['labels']))
+    else:
+        embedding=None
         
     if labeled and 'topic_counts' in text.columns:
         text['topics']=text.apply(lambda x: x['topic_counts'][x.sentences_start:(x.sentences_start+x.sentences_to_use)],axis=1)
@@ -186,12 +191,9 @@ def generate_segment(
     else:
         topics = None
 
-    if embeddings:
-        return results, embedding, labels, topics, doc_count
-    else:
-        return results, labels, topics, doc_count
+    return results, embedding, labels, topics, doc_count
 
 def try_create_test_data():
     t=transcript_pickle_to_df()
-    hold=generate_segment(t, doc_count_limit = 10, sentence_min = 20)  
+    hold=generate_segment(t, doc_count_max = 10, sentence_min = 20)  
     print(hold[2])
