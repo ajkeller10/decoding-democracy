@@ -6,7 +6,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 import torch
 from . import baselines as topic_segmentation_baselines
-from .types import TopicSegmentationAlgorithm, BERTSegmentation
+from .types import TopicSegmentationAlgorithm, BERTSegmentation, TextTilingHyperparameters
 from transformers import RobertaConfig, RobertaModel, AutoTokenizer, AutoModel
 from typing import Optional
 
@@ -22,7 +22,7 @@ PARALLEL_INFERENCE_INSTANCES = 20
 DISPLAY_SIMILARITIES = False
 
 
-def depth_score(timeseries):
+def depth_score(timeseries: list[float])-> list[float]:
     """
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
     given token-sequence gap and is based on the distance from the peaks on both sides of the valley to that valley.
@@ -44,7 +44,10 @@ def depth_score(timeseries):
     return depth_scores
 
 
-def smooth(timeseries, n, s):
+def smooth(
+        timeseries: list[float],
+        n: int,
+        s: int) -> list[float]:
     """Smooths time series. Only used in Solbiati et al's OriginalSegmentation."""
     smoothed_timeseries = timeseries[:]
     for _ in range(n):
@@ -56,15 +59,20 @@ def smooth(timeseries, n, s):
     return smoothed_timeseries
 
 
-def sentences_similarity(first_sentence_features, second_sentence_features) -> float:
+def sentences_similarity(
+        first_sentence_features: torch.Tensor, 
+        second_sentence_features: torch.Tensor) -> float:
     """
-    Given two senteneces embedding features compute cosine similarity. 
+    Given two embedding features compute cosine similarity. 
     """
     similarity_metric = torch.nn.CosineSimilarity()
     return float(similarity_metric(first_sentence_features, second_sentence_features))
 
 
-def compute_window(timeseries, start_index, end_index):
+def compute_window(
+        timeseries: list[float],
+        start_index: int,
+        end_index: int):
     """Given start and end index of embedding, compute pooled window value.
 
     [window_size, 768] -> [1, 768]
@@ -79,7 +87,9 @@ def compute_window(timeseries, start_index, end_index):
         return pooling(stack)
 
 
-def block_comparison_score(timeseries, k):
+def block_comparison_score(
+        timeseries: list[float],
+        k: int)-> list[float]:
     """
     comparison score for a gap (i)
 
@@ -96,7 +106,10 @@ def block_comparison_score(timeseries, k):
     return res
 
 
-def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
+def get_features_from_sentence(
+        batch_sentences: list[str],
+        layer: Optional[int] = -2,
+        old_version: Optional[bool] = False) -> list[torch.Tensor]:
     """
     extracts the BERT semantic representation
     from a sentence, using an averaged value of
@@ -127,6 +140,7 @@ def get_features_from_sentence(batch_sentences, layer=-2, old_version=False):
 
 
 def arsort2(array1, array2):
+    """Helper function for Solbiati et al's OriginalSegmentation."""
     x = np.array(array1)
     y = np.array(array2)
 
@@ -146,10 +160,10 @@ def get_local_maxima(array):
 
 
 def depth_score_to_topic_change_indexes(
-    depth_score_timeseries,
-    meeting_duration,
-    topic_segmentation_configs
-):
+    depth_score_timeseries: list[float],
+    meeting_duration: int,
+    topic_segmentation_configs: TextTilingHyperparameters
+    )-> list[int]:
     """
     capped add a max segment limit so there are not too many segments, used for UI improvements on the Workplace TeamWork product
 
@@ -205,7 +219,7 @@ def depth_score_to_topic_change_indexes(
     return local_maxima_indices
 
 
-def get_timeseries(caption_indexes, features):
+def get_timeseries(caption_indexes,features):
     timeseries = []
     for caption_index in caption_indexes:
         timeseries.append(features[caption_index])
@@ -226,7 +240,9 @@ def split_list(a, n):
         for i in range(min(len(a), n)))
 
 
-def statistical_segmentation(similarities, stdevs):
+def statistical_segmentation(
+        similarities: list[float],
+        stdevs: int) -> tuple[list[int], float]:
     """Core method for NewSegmentation - finds local minima below a statistical threshold."""
     indices = []
     start = None
@@ -244,7 +260,10 @@ def statistical_segmentation(similarities, stdevs):
     return indices, threshold
 
 
-def fix_indices(segments, window_size, segmenting_method):
+def fix_indices(
+        segments: list[float],
+        window_size: int,
+        segmenting_method: str) -> tuple[list[float], int]:
     """Original code incorrectly returned indices relative to original indexing. 
     
     This fixes that.

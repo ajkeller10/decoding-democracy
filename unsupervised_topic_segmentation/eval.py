@@ -21,7 +21,11 @@ CAPTION_COL_NAME = "caption"
 LABEL_COL_NAME = "label"
 
 
-def compute_metrics(prediction_segmentations, binary_labels, metric_name_suffix="", verbose=False):
+def compute_metrics(
+        prediction_segmentations: dict[str,list], 
+        binary_labels: dict[str,list], 
+        metric_name_suffix: Optional[str] = "", 
+        verbose: Optional[bool] = False) -> dict[str,float]:
     """Computes average Pk and WinDiff across all meetings."""
     _pk, _windiff = [], []
     for meeting_id, reference_segmentation in binary_labels.items():
@@ -187,7 +191,10 @@ def binary_labels_top_level(
     return labels_top_level
 
 
-def recode_labels(input_df,meeting_id_col_name,label_col_name):
+def recode_labels(
+        input_df: pd.DataFrame,
+        meeting_id_col_name: str,
+        label_col_name: str) -> pd.DataFrame:
     """
     New function that recodes from 1/2/3 to 0/1.
     Dictionary of meeting_id: reference_segmentation where latter is
@@ -221,10 +228,10 @@ def eval_topic_segmentation(
     col_names: Optional[tuple] = None,
     binary_label_encoding: Optional[bool] = False,
     return_segmentation: Optional[bool] = False,
-    verbose: Optional[bool] = False) -> Dict[str, float]:
+    verbose: Optional[bool] = False) -> dict[str, float]:
     """Core eval function."""
     
-    if dataset_name is not None:
+    if dataset_name is not None:  # only used in original eval approach
         if dataset_name == TopicSegmentationDatasets.AMI:
             input_df, label_df = ami_dataset()
         elif dataset_name == TopicSegmentationDatasets.ICSI:
@@ -280,8 +287,13 @@ def eval_topic_segmentation(
     
 
 def multiple_eval(
-        data_function,iterations,test_algorithm,even_algorithm,random_algorithm,
-        verbose=False,embeddings=False):
+        data_function: function,
+        iterations: int,
+        test_algorithm: TopicSegmentationAlgorithm,
+        even_algorithm: TopicSegmentationAlgorithm,
+        random_algorithm: TopicSegmentationAlgorithm,
+        verbose: Optional[bool] = False,
+        embeddings: Optional[bool] = False) -> pd.DataFrame:
     """Metrics over multiple evaluation iterations."""
 
     n_captions = []

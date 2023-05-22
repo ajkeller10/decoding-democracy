@@ -4,6 +4,7 @@
 from random import random
 import pandas as pd
 import numpy as np
+from typing import Optional
 
 
 SPLIT_VOCAB  = ['agenda']
@@ -12,8 +13,8 @@ SPLIT_VOCAB  = ['agenda']
 def topic_segmentation_random(
     df: pd.DataFrame,
     meeting_id_col_name: str,
-    random_threshold: float = 0.9,
-    verbose: bool = False):
+    random_threshold: Optional[float] = 0.9,
+    verbose: bool = False) -> dict[str, list[int]]:
     """Randomly segment meeting via Bernoulli draw with specified threshold."""
 
     segments = {}
@@ -32,7 +33,7 @@ def topic_segmentation_even(
     df: pd.DataFrame,
     meeting_id_col_name: str,
     k: int,
-    verbose: bool = False):
+    verbose: bool = False) -> dict[str, list[int]]:
     """Evenly segment meeting into segments of length k."""
 
     segments = {}
@@ -49,7 +50,7 @@ def topic_segmentation_even(
 
 def topic_segmentation_none(
     df: pd.DataFrame,
-    meeting_id_col_name: str):
+    meeting_id_col_name: str) -> dict[str, list[int]]:
     """Returns single segment for each meeting."""
 
     return {id:[] for id in set(df[meeting_id_col_name])}
@@ -60,7 +61,7 @@ def topic_segmentation_lexical(
     meeting_id_col_name: str,
     caption_col_name: str = 'caption',
     split_vocabulary=SPLIT_VOCAB,
-    verbose: bool = False):
+    verbose: bool = False) -> dict[str, list[int]]:
     """Segment meeting based on caption content, splitting on words in split vocabulary."""
     
     segments = {}
