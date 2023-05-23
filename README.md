@@ -96,7 +96,7 @@ For AMI meeting transcript data, segmenting randomly concatenated documents does
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
-![Table 2: AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
+![Table 2: AMI Meeting Corpus Performance](tables/table2.JPG)
 
 Concatenated topic segmentation suggests window k=70 and threshold j=1 to balance Pk and WinDiff, but this is suboptimal for true segmentation task.
 
