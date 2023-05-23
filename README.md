@@ -1,6 +1,6 @@
 # Decoding Democracy: Segmentation of City Council Transcripts
 
-This is the final project from [@ajkeller10](https://github.com/ajkeller10) and [@olpinney](https://github.com/olpinney) for CAPP 30255 Advanced Machine Learning for Public Policy, in Spring 2023.
+This is the final project from [@ajkeller10](https://github.com/ajkeller10) and [@olpinney](https://github.com/olpinney) for CAPP 30255 Advanced Machine Learning for Public Policy in Spring 2023.
 
 ## Project Intro / Objective
 Our project builds on the [Council Data Project](https://github.com/CouncilDataProject/cdp-roadmap/issues/9), an open-source product that makes local government meetings more accessible by automatically transcribing meeting recordings. Our project attempts to segment transcripts to improve usefulness –  an open to-do in Council Data Project’s backlog.
@@ -33,8 +33,8 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 - use of Spark is optional - embedding can be done [locally](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py) but will slow down code dramatically
 
 ### Main analysis files
-- [explination of methods and exploration of manually labeled transcript data](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
-- [evaluating random concatination proxy task on AMI corpus](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
+- [explanation of methods and exploration of manually labeled transcript data](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
+- [evaluating random concatenation proxy task on AMI corpus](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
 
 ## Approach
@@ -47,9 +47,8 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 #### Links
 - [link to Spark embeddings](https://github.com/ajkeller10/decoding-democracy/blob/main/data_cleaning.ipynb)
 - [link to local methods](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py)
-
-
-![TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
+  
+![Table 1: TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
 
 ### Hyperparameter tuning:
 - We needed a proxy task to tune hyperparameters k and j and evaluate performance for unlabeled transcripts
@@ -88,7 +87,7 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 - [code for data cleaning pre- and post-Spark](https://github.com/ajkeller10/decoding-democracy/blob/main/data_cleaning.ipynb)
 - [code for data embedding in Spark](https://github.com/ajkeller10/decoding-democracy/blob/main/spark_roberta_pipeline.ipynb)
 - embedded data is 190MB and cannot be stored on github. Please contact for copy of "decoding-democracy/data/transcripts_with_embeds.pickle"
-- [code for generating random concatinated transcripts](https://github.com/ajkeller10/decoding-democracy/blob/main/create_test_data.py)
+- [code for generating random concatenated transcripts](https://github.com/ajkeller10/decoding-democracy/blob/main/create_test_data.py)
 
 ## Results
 ### Takeaway 1: 
@@ -97,14 +96,14 @@ For AMI meeting transcript data, segmenting randomly concatenated documents does
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/test_with_embeddings.ipynb)
 
-![AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
+![Table 2: AMI Meeting Corpus Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table2.JPG)
 
 Concatenated topic segmentation suggests window k=70 and threshold j=1 to balance Pk and WinDiff, but this is suboptimal for true segmentation task.
 
 ### Takeaway 2: 
 TextTiling with transformers is anecdotally successful at segmenting council transcripts; however, hyperparameter tuning and performance evaluation require manually-labeled data.
 
-![Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
+![Table 3: Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
 
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
