@@ -48,7 +48,7 @@ Our project builds on the [Council Data Project](https://github.com/CouncilDataP
 - [link to Spark embeddings](https://github.com/ajkeller10/decoding-democracy/blob/main/data_cleaning.ipynb)
 - [link to local methods](https://github.com/ajkeller10/decoding-democracy/blob/main/unsupervised_topic_segmentation/core.py)
   
-![Table 1: TextTiling Results on Manually Labeled Transcript](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table1.png)
+![Table 1: TextTiling Results on Manually Labeled Transcript](tables/table1.png)
 
 ### Hyperparameter tuning:
 - We needed a proxy task to tune hyperparameters k and j and evaluate performance for unlabeled transcripts
@@ -103,7 +103,7 @@ Concatenated topic segmentation suggests window k=70 and threshold j=1 to balanc
 ### Takeaway 2: 
 TextTiling with transformers is anecdotally successful at segmenting council transcripts; however, hyperparameter tuning and performance evaluation require manually-labeled data.
 
-![Table 3: Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.png)
+![Table 3: Manually Labeled Council Transcript Performance](tables/table3.png)
 
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
