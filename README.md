@@ -1,6 +1,6 @@
 # Decoding Democracy: Segmentation of City Council Transcripts
 
-This is the final project from [@ajkeller10](https://github.com/ajkeller10) and [@olpinney](https://github.com/olpinney) for CAPP 30255 Advanced Machine Learning for Public Policy, in Spring 2023.
+This is the final project from [@ajkeller10](https://github.com/ajkeller10) and [@olpinney](https://github.com/olpinney) for CAPP 30255 Advanced Machine Learning for Public Policy in Spring 2023.
 
 ## Project Intro / Objective
 Our project builds on the [Council Data Project](https://github.com/CouncilDataProject/cdp-roadmap/issues/9), an open-source product that makes local government meetings more accessible by automatically transcribing meeting recordings. Our project attempts to segment transcripts to improve usefulness –  an open to-do in Council Data Project’s backlog.
