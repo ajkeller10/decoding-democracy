@@ -103,7 +103,7 @@ Concatenated topic segmentation suggests window k=70 and threshold j=1 to balanc
 ### Takeaway 2: 
 TextTiling with transformers is anecdotally successful at segmenting council transcripts; however, hyperparameter tuning and performance evaluation require manually-labeled data.
 
-![Table 3: Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.JPG)
+![Table 3: Manually Labeled Council Transcript Performance](https://github.com/ajkeller10/decoding-democracy/tree/main/tables/table3.png)
 
 #### Links
 - [analysis file](https://github.com/ajkeller10/decoding-democracy/blob/main/demonstrate_segmentation_methods.ipynb)
